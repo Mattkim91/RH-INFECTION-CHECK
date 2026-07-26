@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>재활감염 Quick Check</title>
+<style>
+  :root{
+    --navy:#0F2A47;
+    --navy-2:#173A5E;
+    --teal:#1F6F78;
+    --mint:#7FD1BE;
+    --mint-bg:#EAF7F3;
+    --gold:#C9A227;
+    --ink:#122031;
+    --sub:#5B6B7A;
+    --line:#E2E8ED;
+    --card:#FFFFFF;
+    --bg:#F4F7F8;
+    --danger:#B3261E;
+    --danger-bg:#FCEBEA;
+    --warn:#B5620A;
+    --warn-bg:#FDF1E4;
+    --info:#1565C0;
+    --info-bg:#EAF2FC;
+    --ok:#1E7A34;
+    --ok-bg:#E9F6EC;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",Roboto,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:40px;
+  }
+  .app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+  }
+  header.top{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);
+    color:#fff;
+    padding:22px 20px 18px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    box-shadow:0 2px 10px rgba(15,42,71,0.18);
+  }
+  header.top .eyebrow{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--mint);
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  header.top h1{
+    font-size:20px;
+    margin:0 0 2px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+  }
+  header.top .sub{
+    font-size:12.5px;
+    color:#C7D7E3;
+  }
+  .progress{
+    display:flex;
+    gap:6px;
+    margin-top:14px;
+  }
+  .progress .seg{
+    flex:1;
+    height:4px;
+    border-radius:3px;
+    background:rgba(255,255,255,0.22);
+    overflow:hidden;
+  }
+  .progress .seg .fill{
+    height:100%;
+    width:0%;
+    background:var(--mint);
+    transition:width .25s ease;
+  }
+  .progress .seg.done .fill{width:100%;}
+  .progress .seg.active .fill{width:100%;}
+
+  main{padding:16px 16px 8px;}
+  .step-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--teal);
+    letter-spacing:.04em;
+    margin:2px 2px 8px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(15,42,71,0.04);
+  }
+  .card h2{
+    font-size:15.5px;
+    margin:0 0 3px;
+    font-weight:800;
+    color:var(--navy);
+  }
+  .card .hint{
+    font-size:12.5px;
+    color:var(--sub);
+    margin:0 0 12px;
+    line-height:1.5;
+  }
+  .chip-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .chip-grid.cols-1{grid-template-columns:1fr;}
+  .chip{
+    border:1.5px solid var(--line);
+    background:#fff;
+    border-radius:12px;
+    padding:11px 10px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    text-align:center;
+    cursor:pointer;
+    transition:all .12s ease;
+    line-height:1.35;
+    user-select:none;
+  }
+  .chip:active{transform:scale(0.97);}
+  .chip.sel{
+    border-color:var(--teal);
+    background:var(--mint-bg);
+    color:var(--navy);
+  }
+  .chip.sel::before{
+    content:"✓ ";
+    color:var(--teal);
+    font-weight:800;
+  }
+  .radio-list{display:flex;flex-direction:column;gap:8px;}
+  .radio-row{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:11px 12px;
+    cursor:pointer;
+    background:#fff;
+  }
+  .radio-row.sel{
+    border-color:var(--teal);
+    background:var(--mint-bg);
+  }
+  .radio-row .dot{
+    width:18px;height:18px;border-radius:50%;
+    border:2px solid var(--line);
+    flex:0 0 18px;
+    margin-top:1px;
+    position:relative;
+  }
+  .radio-row.sel .dot{border-color:var(--teal);}
+  .radio-row.sel .dot::after{
+    content:"";
+    position:absolute;inset:3px;
+    background:var(--teal);
+    border-radius:50%;
+  }
+  .radio-row .txt{font-size:13.5px;font-weight:600;line-height:1.4;}
+  .radio-row .txt small{display:block;font-weight:400;color:var(--sub);font-size:11.5px;margin-top:2px;}
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .label{font-size:13.5px;font-weight:600;}
+  .toggle-row .label small{display:block;font-weight:400;color:var(--sub);font-size:11px;margin-top:1px;}
+  .switch{
+    width:44px;height:26px;border-radius:14px;
+    background:#D8DEE3;
+    position:relative;
+    flex:0 0 44px;
+    transition:background .15s ease;
+    cursor:pointer;
+  }
+  .switch::after{
+    content:"";
+    position:absolute;
+    width:20px;height:20px;
+    background:#fff;
+    border-radius:50%;
+    top:3px;left:3px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.25);
+    transition:left .15s ease;
+  }
+  .switch.on{background:var(--teal);}
+  .switch.on::after{left:21px;}
+  .switch.warn.on{background:var(--danger);}
+
+  .alert-note{
+    display:flex;gap:8px;
+    background:var(--warn-bg);
+    border:1px solid #F0D8AF;
+    color:var(--warn);
+    border-radius:10px;
+    padding:9px 11px;
+    font-size:12px;
+    line-height:1.5;
+    margin-top:4px;
+  }
+
+  footer.nav{
+    position:sticky;
+    bottom:0;
+    background:linear-gradient(to top, var(--bg) 60%, rgba(244,247,248,0));
+    padding:10px 16px 16px;
+    display:flex;
+    gap:10px;
+    z-index:10;
+  }
+  .btn{
+    flex:1;
+    border:none;
+    border-radius:13px;
+    padding:14px 10px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    text-align:center;
+  }
+  .btn.primary{
+    background:var(--navy);
+    color:#fff;
+    box-shadow:0 4px 12px rgba(15,42,71,0.25);
+  }
+  .btn.primary:disabled{
+    background:#A9B7C3;
+    box-shadow:none;
+    cursor:not-allowed;
+  }
+  .btn.ghost{
+    background:#fff;
+    border:1.5px solid var(--line);
+    color:var(--navy);
+    flex:0 0 84px;
+  }
+  .btn.restart{
+    background:#fff;
+    border:1.5px solid var(--navy);
+    color:var(--navy);
+  }
+
+  /* Result screen */
+  .result-banner{
+    border-radius:var(--radius);
+    padding:18px 16px;
+    margin-bottom:14px;
+    color:#fff;
+  }
+  .result-banner .kicker{
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    opacity:.85;
+    margin-bottom:6px;
+  }
+  .result-banner .title{
+    font-size:21px;
+    font-weight:800;
+    line-height:1.3;
+    margin-bottom:6px;
+  }
+  .result-banner .desc{
+    font-size:13px;
+    line-height:1.5;
+    opacity:.95;
+  }
+  .banner-general{background:linear-gradient(135deg,#1E7A34,#2A9C4A);}
+  .banner-conditional{background:linear-gradient(135deg,#1565C0,#1E88E5);}
+  .banner-ward{background:linear-gradient(135deg,#B5620A,#D97F1E);}
+  .banner-hold{background:linear-gradient(135deg,#8E1F1A,#B3261E);}
+
+  .tb-warning{
+    background:var(--danger-bg);
+    border:1.5px solid #E8AFA9;
+    color:var(--danger);
+    border-radius:12px;
+    padding:12px 13px;
+    font-size:12.5px;
+    line-height:1.55;
+    margin-bottom:14px;
+    font-weight:600;
+  }
+  .tb-warning b{display:block;font-size:13.5px;margin-bottom:4px;}
+
+  .section-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13.5px;
+    font-weight:800;
+    color:var(--navy);
+    margin:0 0 10px;
+  }
+  .section-title .ico{
+    width:22px;height:22px;
+    border-radius:7px;
+    background:var(--mint-bg);
+    color:var(--teal);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    font-weight:800;
+    flex:0 0 22px;
+  }
+  ul.list{
+    margin:0;padding:0;list-style:none;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  ul.list li{
+    font-size:13px;
+    line-height:1.55;
+    padding-left:16px;
+    position:relative;
+    color:var(--ink);
+  }
+  ul.list li::before{
+    content:"•";
+    color:var(--teal);
+    font-weight:900;
+    position:absolute;
+    left:0;
+  }
+  ul.check{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;}
+  ul.check li{
+    font-size:12.8px;
+    line-height:1.5;
+    padding-left:22px;
+    position:relative;
+    color:var(--ink);
+  }
+  ul.check li::before{
+    content:"☐";
+    position:absolute;left:0;top:-1px;
+    color:var(--teal);
+    font-size:14px;
+  }
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
+  .tag{
+    font-size:11px;
+    font-weight:700;
+    background:var(--mint-bg);
+    color:var(--teal);
+    padding:4px 9px;
+    border-radius:20px;
+  }
+  .tag.gold{background:#FBF0D3;color:#8A6A0A;}
+
+  .disclaimer{
+    background:#fff;
+    border:1.5px dashed var(--navy-2);
+    border-radius:14px;
+    padding:14px;
+    font-size:11.8px;
+    line-height:1.6;
+    color:var(--sub);
+    margin:6px 0 16px;
+  }
+  .disclaimer b{color:var(--navy);}
+
+  .app-badge{
+    text-align:center;
+    font-size:10.5px;
+    color:#9AA7B2;
+    padding-bottom:6px;
+  }
+
+  .subgroup-title{
+    font-size:11.5px;
+    font-weight:800;
+    color:var(--sub);
+    letter-spacing:.03em;
+    margin:14px 0 8px;
+    text-transform:uppercase;
+  }
+  .subgroup-title:first-child{margin-top:0;}
+
+  @media (min-width:521px){
+    .app{box-shadow:0 0 40px rgba(15,42,71,0.08);}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* =========================================================
+   재활감염 Quick Check — 데이터 정의
+   근거: 「재활치료실 감염환자 치료·관리 세부 운영지침(검수용 가안)」
+   ※ 본 앱은 지침을 대체하지 않으며 현장 참고용 도구입니다.
+   ========================================================= */
+
+const PARTS = [
+  {id:'pt', label:'물리치료(PT)', ward:true},
+  {id:'ot', label:'작업치료(OT)', ward:false},
+  {id:'swallow', label:'연하치료', ward:false},
+  {id:'st', label:'언어치료(ST)', ward:false},
+];
+
+const DISEASES = [
+  {id:'mrsa', label:'MRSA', precaution:'contact',
+    base:'CONDITIONAL',
+    note:'접촉주의 지침 적용. 중앙 지침상 치료실 이동 제한 없음 → 치료실(운동치료실) 조건부 치료 우선.'},
+  {id:'vre', label:'VRE', precaution:'contact_mdro',
+    base:'CONDITIONAL_ALT_WARD',
+    note:'입원·외래 구분 없이 동일 원칙 적용. 치료실 이동이 별도로 제한되지 않아 치료실 조건부 치료를 우선 진행하되, 상황에 따라 병실치료도 대안으로 고려 가능.'},
+  {id:'cre_cpe', label:'CRE / CPE', precaution:'contact_mdro',
+    base:'CONDITIONAL_ALT_WARD',
+    note:'VRE와 동일한 재활치료 운영원칙 적용(감염관리센터 확인 예정 항목).'},
+  {id:'crpa_mrab', label:'CRPA(MRPA) · MRAB', precaution:'contact',
+    base:'CONDITIONAL',
+    note:'접촉주의 지침 적용. 치료실 조건부 치료 우선.'},
+  {id:'tb', label:'활동성 또는 의심 결핵', precaution:'airborne',
+    base:'WARD_ONLY_TB',
+    note:'공기주의 유지 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 항결핵제 투여 2주 이상 + 전염성 감소 확인 후 치료실 치료 가능 여부를 재평가.'},
+  {id:'covid', label:'COVID-19', precaution:'droplet_air',
+    base:'WARD_ONLY_COVID',
+    note:'격리 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 해제 또는 이동 허용 후 치료실 조건부 치료로 전환 검토. 마스크 제거가 필요한 치료는 별도 확인.'},
+  {id:'flu', label:'Influenza', precaution:'droplet',
+    base:'CONDITIONAL_SYMPTOM',
+    note:'이동 허용되고 마스크 유지가 가능하면 치료실 조건부 치료 우선. 발열·호흡기 증상이 심하면 치료 보류로 전환.'},
+  {id:'rsv', label:'RSV 등 호흡기 감염', precaution:'droplet_contact',
+    base:'CONDITIONAL',
+    note:'중앙 지침상 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료는 보호구 수준을 상향 검토.'},
+  {id:'scabies', label:'옴', precaution:'contact',
+    base:'WARD_ONLY_SCABIES',
+    note:'격리기간 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 치료·환경관리 요건 충족 확인 후 치료실 치료 재개.'},
+  {id:'unknown_fever', label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
+    base:'HOLD',
+    note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
+  {id:'other', label:'기타 감염주의 필요 상태', precaution:'unclear',
+    base:'HOLD',
+    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리센터 확인이 우선 필요.'},
+];
+
+const TREATMENTS = [
+  {id:'mat_bed', label:'매트 / 베드 사용',
+    guide:'매트·베드·의자·손잡이·조작부는 환자 간 소독. 감염주의 환자 사용 후에는 다음 환자 사용 전 접촉 부위와 조작부를 반드시 소독한다.'},
+  {id:'gait', label:'보행훈련',
+    guide:'워커·지팡이·휠체어·보행벨트·난간 등 환자·보호자·치료사가 접촉한 부위를 소독한 뒤 다른 환자에게 사용한다.'},
+  {id:'exercise_equip', label:'운동기구 사용',
+    guide:'치료 전 사용 범위를 정해 접촉 장비를 최소화하고, 손잡이·조작부는 치료 후 소독한다.'},
+  {id:'fes', label:'전기치료 / FES 사용',
+    guide:'FES 패드는 환자별로 개별 지정하여 다른 환자와 공유하지 않는다. 오염·접착력 저하·보관상태를 확인 후 필요 시 교체하며, 공용 사용 시에는 환자 간 소독 또는 일회용 사용을 원칙으로 한다.'},
+  {id:'robot_strap', label:'로봇치료 / 스트랩 사용',
+    guide:'로봇 조작부는 반복접촉면으로 관리하여 치료 후 소독한다. 스트랩·고정벨트는 감염주의 환자 전용품을 사용하거나 소독·세탁이 가능한 방식으로 관리하고, 소독·세탁이 어려운 재질은 공용 사용을 제한한다.'},
+  {id:'teaching_tools', label:'교구 / 태블릿 / 도서 사용',
+    guide:'플라스틱·금속 등 소독 가능한 교구는 환자 간 소독한다. 종이·도서·천 재질 등 소독이 어려운 공용 교구는 전용 교구, 일회용 자료, 코팅자료 소독 또는 공용 사용 제한 중 하나를 적용한다. 태블릿·리모컨 등 전자기기는 제조사 허용 방법과 병원 승인 소독제로 접촉면을 닦아 관리한다.'},
+  {id:'resp_aerosol', label:'호흡재활 또는 에어로졸 발생 가능 치료',
+    guide:'기침·객담 배출 유도, 강한 호기훈련, 호흡기구 사용 등은 비말·에어로졸 발생 가능성이 있으므로 일반 환자와 분리된 구역에서 시행하고 보호구 수준 상향을 검토한다(세부 기준은 감염관리센터 확인 필요).'},
+];
+
+const PRECAUTION_PPE = {
+  contact:{tag:'접촉주의', ppe:['장갑, 필요 시 가운 착용','환자·환자 주변환경 접촉 후 손위생','사용장비 최소화, 가능한 경우 환자 전용·일회용 물품 사용']},
+  contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['장갑, 필요 시 가운 착용','현재 격리상태와 중앙 다제내성균 지침 확인','환자·환자 주변환경 접촉 후 손위생']},
+  droplet:{tag:'비말주의', ppe:['환자·치료자 마스크 착용','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
+  droplet_contact:{tag:'비말·접촉주의', ppe:['마스크 착용','장갑, 필요 시 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
+  droplet_air:{tag:'비말·공기(중앙 최신지침 확인)', ppe:['중앙 최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
+  airborne:{tag:'공기주의', ppe:['중앙 지침에 따른 호흡기 보호구(N95/KF94 등)','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
+  unclear:{tag:'표준주의 + 확인 필요', ppe:['표준주의 적용, 추가 보호구는 확인 후 결정','병동·담당의 확인 전까지 추가 보호구 임의 적용 보류']},
+};
+
+const CHECK_ITEMS = [
+  'EMR 감염 Alert와 현재 활성화 상태',
+  '격리 종류, 감염질환·감염균명',
+  '최근 검사결과 및 격리해제 여부',
+  '발열·호흡기 증상·피부병변·설사 등 현재 증상',
+  '치료실 이동 가능 여부와 이동 방법',
+  '해당 치료 파트의 병실방문치료 프로그램 운영 여부',
+  '치료 후 접촉면·장비 소독시간 확보 가능 여부',
+  '불명확한 기준은 담당의 또는 감염관리센터 확인',
+];
+
+/* =========================================================
+   상태
+   ========================================================= */
+const state = {
+  step:1,
+  part:null,
+  companion:false,
+  alertMismatch:false,
+  isolationUnclear:false,
+  disease:null,
+  treatments:[],
+};
+
+function resetState(){
+  state.step=1; state.part=null;
+  state.companion=false;
+  state.alertMismatch=false; state.isolationUnclear=false;
+  state.disease=null; state.treatments=[];
+  render();
+}
+
+/* =========================================================
+   판정 로직
+   ========================================================= */
+function decide(){
+  const d = DISEASES.find(x=>x.id===state.disease);
+  const part = PARTS.find(p=>p.id===state.part);
+  const hasWard = part ? part.ward : false;
+
+  // 최우선 override
+  if(state.alertMismatch || state.isolationUnclear){
+    return {
+      status:'HOLD',
+      title:'확인 전 치료 보류',
+      desc:'EMR Alert와 실제 격리상태가 일치하지 않거나 격리해제 여부가 불명확합니다. 최신 검사결과·의무기록과 병동·담당의 확인을 우선하고, 필요 시 감염관리센터에 문의하세요.',
+      location:['확인 전까지 치료를 시작하지 않는다.','병동 또는 담당의 확인 → 필요 시 감염관리센터 문의 순서로 진행한다.'],
+    };
+  }
+
+  let result;
+
+  switch(d.base){
+    case 'CONDITIONAL':
+      result = {status:'CONDITIONAL', title:'치료실 치료 우선 (조건부)',
+        desc:'중앙 지침상 치료실 이동이 제한되지 않습니다. 보호구, 시간·공간 분리, 장비 제한, 치료 후 소독 조건을 충족하면 치료실(운동치료실·작업치료실·언어치료실)에서 우선 진행합니다.'};
+      break;
+    case 'CONDITIONAL_ALT_WARD':
+      result = {status:'CONDITIONAL', title:'치료실 치료 우선 (조건부)',
+        desc:'중앙 지침상 치료실 이동이 별도로 제한되지 않아 조건 충족 시 치료실 치료를 우선 진행합니다. 이동이 어렵거나 환경관리가 부담되는 경우 병실치료도 대안으로 고려할 수 있습니다.'};
+      break;
+    case 'CONDITIONAL_SYMPTOM':
+      result = {status:'CONDITIONAL', title:'치료실 치료 우선 (증상 확인 필요)',
+        desc:'이동이 허용되고 마스크 유지가 가능하면 치료실 조건부 치료를 우선 진행합니다. 발열·호흡기 증상이 심한 경우에는 치료를 보류합니다.'};
+      break;
+    case 'WARD_ONLY_TB':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
+        desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리센터 확인 후에만 치료실 치료를 재검토합니다.'};
+      break;
+    case 'WARD_ONLY_COVID':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
+        desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
+      break;
+    case 'WARD_ONLY_SCABIES':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
+        desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
+      break;
+    case 'HOLD':
+    default:
+      result = {status:'HOLD', title:'확인 전 치료 보류',
+        desc:'담당의 또는 감염관리센터 확인 후 치료 가능 여부와 장소를 재결정합니다.'};
+  }
+
+  // 치료 장소 세부 안내
+  const loc = [];
+
+  if(result.status==='WARD_ONLY'){
+    if(hasWard){
+      loc.push('병실방문치료 프로그램을 통해 병실에서만 치료를 진행합니다. 치료실(운동치료실 등) 이동은 하지 않습니다.');
+    }else{
+      // 병실방문치료 미운영 파트는 병실도 치료실도 현재 시행할 수 없음 → 보류로 전환
+      result.status='HOLD';
+      result.title='확인 전 치료 보류 (치료실 내원 불가 · 병실방문치료 미운영)';
+      result.desc=`${part.label}는 병실방문치료 프로그램을 운영하지 않으며, 현재 질환은 치료실 내원도 제한되어 있어 지금 상태로는 치료를 진행할 수 없습니다. 격리해제 또는 치료실 내원 허용 여부를 담당의·감염관리센터에 확인한 뒤 재평가합니다.`;
+      loc.push('병실방문치료 프로그램이 없고 치료실 내원도 제한되어, 확인 전까지는 치료를 보류합니다.');
+    }
+  }else if(result.status==='CONDITIONAL'){
+    if(hasWard){
+      loc.push('운동치료실에서 다른 환자와의 시간적·공간적 접촉을 최소화하여 치료를 진행합니다. 이동이 어렵거나 치료실 환경관리가 충분하지 않은 경우에는 병실치료도 대안으로 고려할 수 있습니다.');
+    }else{
+      loc.push(`${part.label}는 병실방문치료 프로그램을 운영하지 않으므로, 치료실 내원이 허용된 경우 독립된 치료공간에서 시행합니다.`);
+      if(state.part==='ot') loc.push('작업치료실 내 독립된 치료공간을 우선 활용하고 다른 환자와 치료시간·동선을 분리합니다.');
+      if(state.part==='swallow') loc.push('작업치료실 내 독립된 치료공간에서 시행하며, 비산 위험이 있는 경우 눈 보호구 등 추가 보호구를 적용합니다.');
+      if(state.part==='st') loc.push('1:1 독립 치료실에서 환자 간 치료시간과 이동 동선이 겹치지 않도록 조정합니다.');
+    }
+  }else if(result.status==='HOLD'){
+    loc.push('확인 전까지 치료를 시작하지 않습니다. 병동 또는 담당의 확인 → 필요 시 감염관리센터 문의 순서로 진행합니다.');
+  }
+
+  if(state.companion){
+    loc.push('보호자·간병인·이송요원도 관리 대상입니다. 손위생 후 필요한 보호구(가운·장갑 등)를 착용시키고, 환자·휠체어·침상 접촉 전후 오염된 보호구는 제거 후 손위생을 시행합니다.');
+  }
+  result.location = loc;
+
+  return result;
+}
+
+const STATUS_META = {
+  GENERAL:{cls:'banner-general', kicker:'치료 가능성'},
+  CONDITIONAL:{cls:'banner-conditional', kicker:'치료 가능성'},
+  WARD_ONLY:{cls:'banner-ward', kicker:'치료 가능성'},
+  HOLD:{cls:'banner-hold', kicker:'치료 가능성'},
+};
+
+/* =========================================================
+   렌더링
+   ========================================================= */
+const appEl = document.getElementById('app');
+
+function render(){
+  if(state.step<=3){
+    appEl.innerHTML = renderWizard();
+    bindWizardEvents();
+  }else{
+    appEl.innerHTML = renderResult();
+    bindResultEvents();
+  }
+  window.scrollTo(0,0);
+}
+
+function progressHTML(){
+  let html = '<div class="progress">';
+  for(let i=1;i<=3;i++){
+    let cls='seg';
+    if(i<state.step) cls+=' done';
+    else if(i===state.step) cls+=' active';
+    html += `<div class="${cls}"><div class="fill"></div></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function headerHTML(){
+  return `
+  <header class="top">
+    <div class="eyebrow">Bedside Rehab IC</div>
+    <h1>재활감염 Quick Check</h1>
+    <div class="sub">치료 전 30초 감염관리 체크 · 재활치료 현장 참고용</div>
+    ${progressHTML()}
+  </header>`;
+}
+
+function renderWizard(){
+  let body = '';
+  if(state.step===1) body = step1HTML();
+  if(state.step===2) body = step2HTML();
+  if(state.step===3) body = step3HTML();
+
+  const canNext =
+    (state.step===1 && state.part) ||
+    (state.step===2 && state.disease) ||
+    (state.step===3);
+
+  return `
+  ${headerHTML()}
+  <main>
+    <div class="step-label">STEP ${state.step} / 3</div>
+    ${body}
+  </main>
+  <footer class="nav">
+    ${state.step>1 ? `<button class="btn ghost" id="btnBack">이전</button>` : ''}
+    <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>
+      ${state.step<3 ? '다음' : '결과 확인'}
+    </button>
+  </footer>
+  `;
+}
+
+function step1HTML(){
+  const partChips = PARTS.map(p=>`
+    <div class="chip ${state.part===p.id?'sel':''}" data-part="${p.id}">${p.label}</div>
+  `).join('');
+
+  return `
+  <div class="card">
+    <h2>치료 파트</h2>
+    <p class="hint">병실방문치료 프로그램은 물리치료(PT)에만 운영됩니다. 작업치료·연하치료·언어치료는 치료실 내원이 허용된 경우에 한해 독립된 공간에서 시행합니다.</p>
+    <div class="chip-grid">${partChips}</div>
+  </div>
+
+  <div class="card">
+    <h2>추가 확인 사항</h2>
+    <div class="toggle-row">
+      <div class="label">보호자·간병인·이송요원 동반</div>
+      <div class="switch ${state.companion?'on':''}" data-toggle="companion"></div>
+    </div>
+    <div class="toggle-row">
+      <div class="label">Alert와 실제 격리상태 불일치<small>둘 중 하나만 켜도 즉시 확인 전 보류로 안내됩니다</small></div>
+      <div class="switch warn ${state.alertMismatch?'on':''}" data-toggle="alertMismatch"></div>
+    </div>
+    <div class="toggle-row">
+      <div class="label">격리해제 여부 불명확</div>
+      <div class="switch warn ${state.isolationUnclear?'on':''}" data-toggle="isolationUnclear"></div>
+    </div>
+    ${(state.alertMismatch || state.isolationUnclear) ? `
+    <div class="alert-note">⚠ 이 조건에서는 감염 유형과 관계없이 <b>확인 전 치료 보류</b>가 우선 안내됩니다. 병동·담당의 확인 후 감염관리센터에 문의하세요.</div>
+    ` : ''}
+  </div>
+  `;
+}
+
+function step2HTML(){
+  const rows = DISEASES.map(d=>`
+    <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
+      <div class="dot"></div>
+      <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
+    </div>
+  `).join('');
+  return `
+  <div class="card">
+    <h2>감염 유형</h2>
+    <p class="hint">환자에게 해당하는 감염질환·감염균을 하나 선택하세요.</p>
+    <div class="radio-list">${rows}</div>
+  </div>
+  `;
+}
+
+function step3HTML(){
+  const chips = TREATMENTS.map(t=>`
+    <div class="chip ${state.treatments.includes(t.id)?'sel':''}" data-treat="${t.id}">${t.label}</div>
+  `).join('');
+  return `
+  <div class="card">
+    <h2>치료 내용</h2>
+    <p class="hint">치료 중 예정된 항목을 모두 선택하세요 (복수 선택 가능, 선택하지 않아도 결과 확인 가능).</p>
+    <div class="chip-grid">${chips}</div>
+  </div>
+  `;
+}
+
+function bindWizardEvents(){
+  appEl.querySelectorAll('[data-part]').forEach(el=>{
+    el.onclick=()=>{state.part=el.dataset.part; render();};
+  });
+  appEl.querySelectorAll('[data-disease]').forEach(el=>{
+    el.onclick=()=>{state.disease=el.dataset.disease; render();};
+  });
+  appEl.querySelectorAll('[data-treat]').forEach(el=>{
+    el.onclick=()=>{
+      const id=el.dataset.treat;
+      const i=state.treatments.indexOf(id);
+      if(i>-1) state.treatments.splice(i,1); else state.treatments.push(id);
+      render();
+    };
+  });
+  appEl.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.onclick=()=>{
+      const key=el.dataset.toggle;
+      state[key]=!state[key];
+      render();
+    };
+  });
+  const back = document.getElementById('btnBack');
+  if(back) back.onclick=()=>{state.step--; render();};
+  const next = document.getElementById('btnNext');
+  if(next) next.onclick=()=>{
+    if(next.disabled) return;
+    state.step++; render();
+  };
+}
+
+function renderResult(){
+  const d = DISEASES.find(x=>x.id===state.disease);
+  const part = PARTS.find(p=>p.id===state.part);
+  const decision = decide();
+  const meta = STATUS_META[decision.status];
+  const ppeInfo = PRECAUTION_PPE[d.precaution];
+
+  const selectedTreatments = TREATMENTS.filter(t=>state.treatments.includes(t.id));
+
+  const tbBanner = (state.disease==='tb') ? `
+    <div class="tb-warning">
+      <b>⚠ 활동성/의심 결핵 — 별도 강조</b>
+      활동성 폐결핵 또는 공기주의 격리가 필요한 상태에서는 병실치료를 포함한 재활치료 시행 여부를 감염관리 기준에 따라 제한합니다. 항결핵제 2주 이상 투여만으로 치료실 치료를 판단하지 않으며, 반드시 담당의 또는 감염관리센터 확인을 거칩니다.
+    </div>` : '';
+
+  return `
+  ${headerHTML()}
+  <main>
+    <div class="step-label">RESULT</div>
+
+    <div class="result-banner ${meta.cls}">
+      <div class="kicker">${meta.kicker} · ${d.label} · ${part.label}</div>
+      <div class="title">${decision.title}</div>
+      <div class="desc">${decision.desc}</div>
+      <div class="tag-row">
+        <span class="tag">${ppeInfo.tag}</span>
+        ${state.companion?'<span class="tag">동반자 있음</span>':''}
+      </div>
+    </div>
+
+    ${tbBanner}
+
+    <div class="card">
+      <div class="section-title"><span class="ico">1</span>치료 장소</div>
+      <ul class="list">
+        ${decision.location.map(l=>`<li>${l}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">2</span>보호구</div>
+      <ul class="list">
+        ${ppeInfo.ppe.map(p=>`<li>${p}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">3</span>장비 사용</div>
+      ${selectedTreatments.length? `
+        <ul class="list">
+          ${selectedTreatments.map(t=>`<li><b>${t.label}</b> — ${t.guide}</li>`).join('')}
+        </ul>
+      ` : `<p class="hint" style="margin:0;">선택한 치료 내용이 없습니다. 공통 원칙: 사용 장비를 최소화하고, 소독이 어려운 공용 물품은 전용·일회용 물품으로 대체합니다.</p>`}
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">4</span>치료 후 조치</div>
+      <ul class="list">
+        <li>환자·보호자·치료사가 접촉한 매트, 베드, 의자, 손잡이, 난간 등 접촉면을 소독한다.</li>
+        <li>사용한 장비의 접촉부위와 조작부를 소독한다.</li>
+        <li>사용한 소도구·교구는 재질에 따라 소독·분리·세탁 또는 폐기한다.</li>
+        <li>소독 완료 및 필요한 접촉시간이 지난 후 다음 환자가 사용하도록 한다.</li>
+        <li>Alert 불일치, 장소·시간·장비 조정 등 특이사항은 치료실 내에 공유한다.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">5</span>확인할 항목</div>
+      <ul class="check">
+        ${CHECK_ITEMS.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="disclaimer">
+      <b>본 도구는 병원 감염관리 지침을 대체하지 않으며</b>, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리센터의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리센터에 확인하세요.
+    </div>
+  </main>
+  <footer class="nav">
+    <button class="btn ghost" id="btnEdit">수정</button>
+    <button class="btn primary restart" id="btnRestart">처음부터 다시</button>
+  </footer>
+  <div class="app-badge">재활치료실 감염환자 치료·관리 세부 운영지침 기반 · 내부 참고용</div>
+  `;
+}
+
+function bindResultEvents(){
+  document.getElementById('btnRestart').onclick = resetState;
+  document.getElementById('btnEdit').onclick = ()=>{ state.step=1; render(); };
+}
+
+render();
+</script>
+</body>
+</html>
