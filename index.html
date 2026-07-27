@@ -2,8 +2,30 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>재활감염 Quick Check</title>
+<meta name="description" content="치료 전 30초 감염관리 체크 · 재활치료 현장 참고용 도구">
+<meta name="theme-color" content="#0F2A47">
+
+<!-- PWA manifest -->
+<link rel="manifest" href="./manifest.json">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-16.png">
+<link rel="shortcut icon" href="./favicon.ico">
+
+<!-- iOS home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="감염Check">
+<link rel="apple-touch-icon" sizes="120x120" href="./icons/icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="./icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+
+<!-- Android / Chrome -->
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   :root{
     --navy:#0F2A47;
@@ -50,6 +72,15 @@
     top:0;
     z-index:20;
     box-shadow:0 2px 10px rgba(15,42,71,0.18);
+  }
+  header.top .version-badge{
+    position:absolute;
+    top:10px;
+    right:14px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.03em;
+    color:rgba(255,255,255,0.55);
   }
   header.top .eyebrow{
     font-size:11px;
@@ -311,6 +342,19 @@
   }
   .tb-warning b{display:block;font-size:13.5px;margin-bottom:4px;}
 
+  .info-note{
+    background:var(--info-bg);
+    border:1.5px solid #B9D3F0;
+    color:var(--info);
+    border-radius:12px;
+    padding:12px 13px;
+    font-size:12.5px;
+    line-height:1.55;
+    margin-bottom:14px;
+    font-weight:600;
+  }
+  .info-note b{display:block;font-size:13.5px;margin-bottom:4px;}
+
   .section-title{
     display:flex;
     align-items:center;
@@ -402,8 +446,130 @@
   }
   .subgroup-title:first-child{margin-top:0;}
 
+  .accordion-item{
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    margin-bottom:8px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .accordion-item:last-child{margin-bottom:0;}
+  .accordion-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:12px 13px;
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .accordion-header .chev{
+    color:var(--teal);
+    font-size:12px;
+    transition:transform .15s ease;
+    flex:0 0 auto;
+  }
+  .accordion-item.open .accordion-header .chev{transform:rotate(180deg);}
+  .accordion-body{
+    display:none;
+    padding:0 13px 13px;
+    font-size:12.8px;
+    line-height:1.55;
+    color:var(--ink);
+  }
+  .accordion-item.open .accordion-body{display:block;}
+
+  /* ===== Responsive scaling: phone -> tablet -> PC ===== */
+
+  /* Phones in landscape / small tablets */
   @media (min-width:521px){
-    .app{box-shadow:0 0 40px rgba(15,42,71,0.08);}
+    body{padding-bottom:0;}
+    .app{
+      box-shadow:0 0 40px rgba(15,42,71,0.08);
+      min-height:100vh;
+    }
+  }
+
+  /* Tablets (iPad portrait/landscape, Android tablets) */
+  @media (min-width:701px){
+    body{
+      padding:28px 16px 40px;
+      min-height:100vh;
+    }
+    .app{
+      max-width:680px;
+      min-height:auto;
+      border-radius:20px;
+      overflow:hidden;
+    }
+    header.top{padding:26px 28px 22px;}
+    header.top h1{font-size:23px;}
+    main{padding:22px 28px 10px;}
+    .card{padding:20px;}
+    .card h2{font-size:17px;}
+    .chip-grid{grid-template-columns:repeat(4,1fr);}
+    footer.nav{padding:14px 28px 22px;}
+    .disclaimer{margin-bottom:10px;}
+  }
+
+  /* Desktop / PC */
+  @media (min-width:1024px){
+    body{
+      display:flex;
+      justify-content:center;
+      padding:40px 16px 56px;
+      background:linear-gradient(180deg,#E9EEF1 0%,var(--bg) 260px);
+    }
+    .app{
+      max-width:760px;
+      width:760px;
+      box-shadow:0 20px 60px rgba(15,42,71,0.14);
+    }
+    header.top{padding:30px 36px 26px;}
+    header.top h1{font-size:25px;}
+    header.top .sub{font-size:13.5px;}
+    main{padding:26px 36px 12px;}
+    .card{padding:22px 24px;}
+    .card h2{font-size:17.5px;}
+    .card .hint{font-size:13.5px;}
+    .chip{font-size:14.5px;padding:13px 12px;cursor:pointer;}
+    .chip:hover{border-color:var(--teal);background:var(--mint-bg);}
+    .radio-row{padding:13px 14px;}
+    .radio-row:hover{border-color:var(--teal);}
+    .btn{cursor:pointer;}
+    .btn.primary:not(:disabled):hover{background:var(--navy-2);}
+    .btn.ghost:hover,.btn.restart:hover{background:var(--mint-bg);}
+    .accordion-header:hover{background:#FAFBFC;}
+    footer.nav{padding:16px 36px 26px;}
+    .result-banner .title{font-size:23px;}
+  }
+
+  /* Very large desktop screens */
+  @media (min-width:1440px){
+    .app{max-width:820px;width:820px;}
+  }
+
+  /* iOS safe-area support (notch / home indicator) */
+  @supports (padding: max(0px)){
+    header.top{
+      padding-top:max(22px, calc(env(safe-area-inset-top) + 12px));
+    }
+    footer.nav{
+      padding-bottom:max(16px, calc(env(safe-area-inset-bottom) + 10px));
+    }
+    body{
+      padding-left:max(0px, env(safe-area-inset-left));
+      padding-right:max(0px, env(safe-area-inset-right));
+    }
+  }
+
+  /* Standalone (installed app) mode: no browser chrome, so trim extra outer spacing */
+  @media (display-mode: standalone){
+    @media (min-width:1024px){
+      body{padding-top:24px;}
+    }
   }
 </style>
 </head>
@@ -437,11 +603,16 @@ const DISEASES = [
   {id:'crpa_mrab', label:'CRPA(MRPA) · MRAB', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의 지침 적용. 치료실 조건부 치료 우선.'},
+  {id:'cdiff', label:'C. difficile (CDI)', precaution:'contact_cdiff',
+    base:'CONDITIONAL',
+    note:'접촉주의 지침 적용, 치료실 이동 제한 없음 → 치료실 조건부 치료 우선. 단, 아포(spore) 형성균이므로 손위생·소독 방법이 다른 접촉주의 질환과 다름(알코올 젤 무효).'},
   {id:'tb', label:'활동성 또는 의심 결핵', precaution:'airborne',
     base:'WARD_ONLY_TB',
+    phaseToggle:'항결핵제 투여 2주 이상 경과 및 전염성 감소, 담당의·감염관리센터 확인 완료',
     note:'공기주의 유지 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 항결핵제 투여 2주 이상 + 전염성 감소 확인 후 치료실 치료 가능 여부를 재평가.'},
   {id:'covid', label:'COVID-19', precaution:'droplet_air',
     base:'WARD_ONLY_COVID',
+    phaseToggle:'격리해제 또는 이동 허용 확인됨',
     note:'격리 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 해제 또는 이동 허용 후 치료실 조건부 치료로 전환 검토. 마스크 제거가 필요한 치료는 별도 확인.'},
   {id:'flu', label:'Influenza', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
@@ -451,6 +622,7 @@ const DISEASES = [
     note:'중앙 지침상 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료는 보호구 수준을 상향 검토.'},
   {id:'scabies', label:'옴', precaution:'contact',
     base:'WARD_ONLY_SCABIES',
+    phaseToggle:'치료·환경관리 요건 충족 확인됨 (재개 가능)',
     note:'격리기간 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 치료·환경관리 요건 충족 확인 후 치료실 치료 재개.'},
   {id:'unknown_fever', label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
@@ -480,6 +652,7 @@ const TREATMENTS = [
 const PRECAUTION_PPE = {
   contact:{tag:'접촉주의', ppe:['장갑, 필요 시 가운 착용','환자·환자 주변환경 접촉 후 손위생','사용장비 최소화, 가능한 경우 환자 전용·일회용 물품 사용']},
   contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['장갑, 필요 시 가운 착용','현재 격리상태와 중앙 다제내성균 지침 확인','환자·환자 주변환경 접촉 후 손위생']},
+  contact_cdiff:{tag:'접촉주의(아포 형성균)', ppe:['장갑, 필요 시 가운 착용','손위생은 반드시 비누와 흐르는 물로 시행 (알코올 손소독제는 아포에 효과 없음)','접촉 표면·사용장비는 차아염소산나트륨 등 아포에 유효한 소독제로 소독']},
   droplet:{tag:'비말주의', ppe:['환자·치료자 마스크 착용','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
   droplet_contact:{tag:'비말·접촉주의', ppe:['마스크 착용','장갑, 필요 시 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
   droplet_air:{tag:'비말·공기(중앙 최신지침 확인)', ppe:['중앙 최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
@@ -494,6 +667,8 @@ const CHECK_ITEMS = [
   '발열·호흡기 증상·피부병변·설사 등 현재 증상',
   '치료실 이동 가능 여부와 이동 방법',
   '해당 치료 파트의 병실방문치료 프로그램 운영 여부',
+  '필요한 환자·치료사·동반자 보호구',
+  '치료 중 사용할 장비와 교구 최소화',
   '치료 후 접촉면·장비 소독시간 확보 가능 여부',
   '불명확한 기준은 담당의 또는 감염관리센터 확인',
 ];
@@ -504,18 +679,14 @@ const CHECK_ITEMS = [
 const state = {
   step:1,
   part:null,
-  companion:false,
-  alertMismatch:false,
-  isolationUnclear:false,
   disease:null,
-  treatments:[],
+  conditionsMet:false,
+  expandedTreat:{},
 };
 
 function resetState(){
   state.step=1; state.part=null;
-  state.companion=false;
-  state.alertMismatch=false; state.isolationUnclear=false;
-  state.disease=null; state.treatments=[];
+  state.disease=null; state.conditionsMet=false; state.expandedTreat={};
   render();
 }
 
@@ -526,16 +697,6 @@ function decide(){
   const d = DISEASES.find(x=>x.id===state.disease);
   const part = PARTS.find(p=>p.id===state.part);
   const hasWard = part ? part.ward : false;
-
-  // 최우선 override
-  if(state.alertMismatch || state.isolationUnclear){
-    return {
-      status:'HOLD',
-      title:'확인 전 치료 보류',
-      desc:'EMR Alert와 실제 격리상태가 일치하지 않거나 격리해제 여부가 불명확합니다. 최신 검사결과·의무기록과 병동·담당의 확인을 우선하고, 필요 시 감염관리센터에 문의하세요.',
-      location:['확인 전까지 치료를 시작하지 않는다.','병동 또는 담당의 확인 → 필요 시 감염관리센터 문의 순서로 진행한다.'],
-    };
-  }
 
   let result;
 
@@ -553,16 +714,31 @@ function decide(){
         desc:'이동이 허용되고 마스크 유지가 가능하면 치료실 조건부 치료를 우선 진행합니다. 발열·호흡기 증상이 심한 경우에는 치료를 보류합니다.'};
       break;
     case 'WARD_ONLY_TB':
-      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
-        desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리센터 확인 후에만 치료실 치료를 재검토합니다.'};
+      if(state.conditionsMet){
+        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (요건 충족 확인됨)',
+          desc:'항결핵제 투여 2주 이상 경과, 전염성 감소 및 담당의·감염관리센터 확인이 완료된 상태로 표시되었습니다. 조건(보호구, 시간·공간 분리, 장비 제한, 치료 후 소독)을 충족하면 치료실 조건부 치료를 진행합니다.'};
+      }else{
+        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
+          desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리센터 확인 후에만 치료실 치료를 재검토합니다.'};
+      }
       break;
     case 'WARD_ONLY_COVID':
-      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
-        desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
+      if(state.conditionsMet){
+        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (격리해제·이동허용 확인됨)',
+          desc:'격리해제 또는 이동 허용이 확인된 상태로 표시되었습니다. 조건을 충족하면 치료실 조건부 치료로 진행합니다. 마스크 제거가 필요한 치료는 가능 여부를 별도 확인합니다.'};
+      }else{
+        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
+          desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
+      }
       break;
     case 'WARD_ONLY_SCABIES':
-      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
-        desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
+      if(state.conditionsMet){
+        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (재개 요건 충족 확인됨)',
+          desc:'치료·환경관리 요건 충족이 확인된 상태로 표시되었습니다. 조건을 충족하면 치료실 조건부 치료를 재개합니다.'};
+      }else{
+        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
+          desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
+      }
       break;
     case 'HOLD':
     default:
@@ -596,12 +772,30 @@ function decide(){
     loc.push('확인 전까지 치료를 시작하지 않습니다. 병동 또는 담당의 확인 → 필요 시 감염관리센터 문의 순서로 진행합니다.');
   }
 
-  if(state.companion){
-    loc.push('보호자·간병인·이송요원도 관리 대상입니다. 손위생 후 필요한 보호구(가운·장갑 등)를 착용시키고, 환자·휠체어·침상 접촉 전후 오염된 보호구는 제거 후 손위생을 시행합니다.');
-  }
+  loc.push(companionNote(d.precaution));
   result.location = loc;
 
   return result;
+}
+
+function companionNote(precaution){
+  const common = '이동 전 오염된 보호구는 제거하고 손위생을 시행하며, 치료 장소에서 직접 접촉이 필요한 경우 청결한 보호구를 새로 착용합니다.';
+  switch(precaution){
+    case 'contact':
+    case 'contact_mdro':
+      return `보호자·간병인·이송요원 중 휠체어·침상 또는 환자 주변환경에 직접 접촉하는 경우 손위생 후 긴팔 가운과 장갑을 착용합니다. ${common}`;
+    case 'contact_cdiff':
+      return `보호자·간병인·이송요원 중 직접 접촉하는 경우 손위생 후 긴팔 가운과 장갑을 착용합니다. 손위생은 알코올 손소독제가 아닌 비누와 흐르는 물로 시행합니다. ${common}`;
+    case 'droplet':
+    case 'droplet_contact':
+      return `보호자·간병인·이송요원도 이동·치료 중 마스크를 착용하고, 직접 접촉이 있는 경우 장갑·가운 착용 여부를 함께 확인합니다. ${common}`;
+    case 'droplet_air':
+      return `보호자·간병인·이송요원도 중앙 최신 격리기준에 따른 마스크(필요 시 호흡기 보호구)를 착용하고 이동 중 환자의 마스크 착용 여부를 확인합니다. ${common}`;
+    case 'airborne':
+      return `보호자·간병인·이송요원의 이동 동반은 최소화하고, 부득이하게 동반하는 경우 환자의 마스크 착용과 중앙 지침에 따른 호흡기 보호구 착용 여부를 확인합니다. ${common}`;
+    default:
+      return `보호자·간병인·이송요원에게 필요한 보호구는 담당의·감염관리센터 확인 후 적용합니다. ${common}`;
+  }
 }
 
 const STATUS_META = {
@@ -617,7 +811,7 @@ const STATUS_META = {
 const appEl = document.getElementById('app');
 
 function render(){
-  if(state.step<=3){
+  if(state.step<=2){
     appEl.innerHTML = renderWizard();
     bindWizardEvents();
   }else{
@@ -629,7 +823,7 @@ function render(){
 
 function progressHTML(){
   let html = '<div class="progress">';
-  for(let i=1;i<=3;i++){
+  for(let i=1;i<=2;i++){
     let cls='seg';
     if(i<state.step) cls+=' done';
     else if(i===state.step) cls+=' active';
@@ -639,10 +833,12 @@ function progressHTML(){
   return html;
 }
 
+const APP_VERSION = 'v2.1';
+
 function headerHTML(){
   return `
   <header class="top">
-    <div class="eyebrow">Bedside Rehab IC</div>
+    <div class="version-badge">${APP_VERSION}</div>
     <h1>재활감염 Quick Check</h1>
     <div class="sub">치료 전 30초 감염관리 체크 · 재활치료 현장 참고용</div>
     ${progressHTML()}
@@ -653,23 +849,21 @@ function renderWizard(){
   let body = '';
   if(state.step===1) body = step1HTML();
   if(state.step===2) body = step2HTML();
-  if(state.step===3) body = step3HTML();
 
   const canNext =
     (state.step===1 && state.part) ||
-    (state.step===2 && state.disease) ||
-    (state.step===3);
+    (state.step===2 && state.disease);
 
   return `
   ${headerHTML()}
   <main>
-    <div class="step-label">STEP ${state.step} / 3</div>
+    <div class="step-label">STEP ${state.step} / 2</div>
     ${body}
   </main>
   <footer class="nav">
     ${state.step>1 ? `<button class="btn ghost" id="btnBack">이전</button>` : ''}
     <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>
-      ${state.step<3 ? '다음' : '결과 확인'}
+      ${state.step<2 ? '다음' : '결과 확인'}
     </button>
   </footer>
   `;
@@ -687,53 +881,62 @@ function step1HTML(){
     <div class="chip-grid">${partChips}</div>
   </div>
 
-  <div class="card">
-    <h2>추가 확인 사항</h2>
-    <div class="toggle-row">
-      <div class="label">보호자·간병인·이송요원 동반</div>
-      <div class="switch ${state.companion?'on':''}" data-toggle="companion"></div>
-    </div>
-    <div class="toggle-row">
-      <div class="label">Alert와 실제 격리상태 불일치<small>둘 중 하나만 켜도 즉시 확인 전 보류로 안내됩니다</small></div>
-      <div class="switch warn ${state.alertMismatch?'on':''}" data-toggle="alertMismatch"></div>
-    </div>
-    <div class="toggle-row">
-      <div class="label">격리해제 여부 불명확</div>
-      <div class="switch warn ${state.isolationUnclear?'on':''}" data-toggle="isolationUnclear"></div>
-    </div>
-    ${(state.alertMismatch || state.isolationUnclear) ? `
-    <div class="alert-note">⚠ 이 조건에서는 감염 유형과 관계없이 <b>확인 전 치료 보류</b>가 우선 안내됩니다. 병동·담당의 확인 후 감염관리센터에 문의하세요.</div>
-    ` : ''}
+  <div class="alert-note" style="margin:0 2px 14px;">
+    ⚠ 치료 전 <b>EMR에서 감염 Alert와 실제 격리상태가 일치하는지, 격리해제 여부가 명확한지</b> 최신 내용으로 다시 확인하세요. Alert만으로 치료 가능 여부를 판단하지 않으며, 불일치하거나 불명확한 경우 병동·담당의 확인 후 필요 시 감염관리센터에 문의합니다.
   </div>
   `;
 }
 
+const PRECAUTION_GROUP_ORDER = ['contact','contact_mdro','contact_cdiff','droplet','droplet_contact','unclear'];
+
 function step2HTML(){
-  const rows = DISEASES.map(d=>`
+  const groupsHTML = PRECAUTION_GROUP_ORDER.map(key=>{
+    const list = DISEASES.filter(d=>d.precaution===key && !d.phaseToggle);
+    if(list.length===0) return '';
+    const rows = list.map(d=>`
+      <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
+        <div class="dot"></div>
+        <div class="txt">${d.label}</div>
+      </div>
+    `).join('');
+    return `
+      <div class="subgroup-title">${PRECAUTION_PPE[key].tag}</div>
+      <div class="radio-list">${rows}</div>
+    `;
+  }).join('');
+
+  const specialList = DISEASES.filter(d=>d.phaseToggle);
+  const specialRows = specialList.map(d=>`
     <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
       <div class="dot"></div>
       <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
     </div>
   `).join('');
+
+  const selectedDisease = DISEASES.find(d=>d.id===state.disease);
+  const phaseCard = (selectedDisease && selectedDisease.phaseToggle) ? `
+  <div class="card">
+    <h2>격리·치료 단계 확인</h2>
+    <p class="hint">아래 항목이 담당의 또는 감염관리센터를 통해 확인된 경우에만 켜세요. 확인되지 않았다면 꺼진 상태로 두면 병실 치료만 가능으로 안내됩니다.</p>
+    <div class="toggle-row">
+      <div class="label">${selectedDisease.phaseToggle}</div>
+      <div class="switch ${state.conditionsMet?'on':''}" data-toggle="conditionsMet"></div>
+    </div>
+  </div>` : '';
+
   return `
   <div class="card">
     <h2>감염 유형</h2>
-    <p class="hint">환자에게 해당하는 감염질환·감염균을 하나 선택하세요.</p>
-    <div class="radio-list">${rows}</div>
+    <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 하나 선택하세요.</p>
+    ${groupsHTML}
   </div>
-  `;
-}
 
-function step3HTML(){
-  const chips = TREATMENTS.map(t=>`
-    <div class="chip ${state.treatments.includes(t.id)?'sel':''}" data-treat="${t.id}">${t.label}</div>
-  `).join('');
-  return `
   <div class="card">
-    <h2>치료 내용</h2>
-    <p class="hint">치료 중 예정된 항목을 모두 선택하세요 (복수 선택 가능, 선택하지 않아도 결과 확인 가능).</p>
-    <div class="chip-grid">${chips}</div>
+    <h2>특별 관리가 필요한 감염</h2>
+    <p class="hint">격리 단계(유지 중 / 요건 충족 후)에 따라 치료 가능 여부가 달라지는 질환입니다.</p>
+    <div class="radio-list">${specialRows}</div>
   </div>
+  ${phaseCard}
   `;
 }
 
@@ -742,15 +945,7 @@ function bindWizardEvents(){
     el.onclick=()=>{state.part=el.dataset.part; render();};
   });
   appEl.querySelectorAll('[data-disease]').forEach(el=>{
-    el.onclick=()=>{state.disease=el.dataset.disease; render();};
-  });
-  appEl.querySelectorAll('[data-treat]').forEach(el=>{
-    el.onclick=()=>{
-      const id=el.dataset.treat;
-      const i=state.treatments.indexOf(id);
-      if(i>-1) state.treatments.splice(i,1); else state.treatments.push(id);
-      render();
-    };
+    el.onclick=()=>{state.disease=el.dataset.disease; state.conditionsMet=false; render();};
   });
   appEl.querySelectorAll('[data-toggle]').forEach(el=>{
     el.onclick=()=>{
@@ -775,13 +970,29 @@ function renderResult(){
   const meta = STATUS_META[decision.status];
   const ppeInfo = PRECAUTION_PPE[d.precaution];
 
-  const selectedTreatments = TREATMENTS.filter(t=>state.treatments.includes(t.id));
-
   const tbBanner = (state.disease==='tb') ? `
     <div class="tb-warning">
       <b>⚠ 활동성/의심 결핵 — 별도 강조</b>
       활동성 폐결핵 또는 공기주의 격리가 필요한 상태에서는 병실치료를 포함한 재활치료 시행 여부를 감염관리 기준에 따라 제한합니다. 항결핵제 2주 이상 투여만으로 치료실 치료를 판단하지 않으며, 반드시 담당의 또는 감염관리센터 확인을 거칩니다.
     </div>` : '';
+
+  const cdiffBanner = (state.disease==='cdiff') ? `
+    <div class="info-note">
+      <b>ℹ C. difficile — 손위생·소독 방법 별도 강조</b>
+      C. difficile는 아포(spore)를 형성하여 알코올 손소독제만으로는 제거되지 않습니다. 반드시 비누와 흐르는 물로 손을 씻고, 접촉 표면과 사용 장비는 차아염소산나트륨 등 아포에 유효한 소독제로 소독합니다.
+    </div>` : '';
+
+  const treatAccordion = TREATMENTS.map(t=>{
+    const open = !!state.expandedTreat[t.id];
+    return `
+    <div class="accordion-item ${open?'open':''}">
+      <div class="accordion-header" data-accordion="${t.id}">
+        <span>${t.label}</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="accordion-body">${t.guide}</div>
+    </div>`;
+  }).join('');
 
   return `
   ${headerHTML()}
@@ -794,11 +1005,11 @@ function renderResult(){
       <div class="desc">${decision.desc}</div>
       <div class="tag-row">
         <span class="tag">${ppeInfo.tag}</span>
-        ${state.companion?'<span class="tag">동반자 있음</span>':''}
       </div>
     </div>
 
     ${tbBanner}
+    ${cdiffBanner}
 
     <div class="card">
       <div class="section-title"><span class="ico">1</span>치료 장소</div>
@@ -816,11 +1027,8 @@ function renderResult(){
 
     <div class="card">
       <div class="section-title"><span class="ico">3</span>장비 사용</div>
-      ${selectedTreatments.length? `
-        <ul class="list">
-          ${selectedTreatments.map(t=>`<li><b>${t.label}</b> — ${t.guide}</li>`).join('')}
-        </ul>
-      ` : `<p class="hint" style="margin:0;">선택한 치료 내용이 없습니다. 공통 원칙: 사용 장비를 최소화하고, 소독이 어려운 공용 물품은 전용·일회용 물품으로 대체합니다.</p>`}
+      <p class="hint">항목을 눌러 세부 소독·관리 지침을 확인하세요.</p>
+      ${treatAccordion}
     </div>
 
     <div class="card">
@@ -830,6 +1038,7 @@ function renderResult(){
         <li>사용한 장비의 접촉부위와 조작부를 소독한다.</li>
         <li>사용한 소도구·교구는 재질에 따라 소독·분리·세탁 또는 폐기한다.</li>
         <li>소독 완료 및 필요한 접촉시간이 지난 후 다음 환자가 사용하도록 한다.</li>
+        <li>다음 환자 전 소독시간 확보가 어려운 경우, 가능하면 하루 중 마지막 시간대에 배정하거나(마지막 시간이 어려우면 최대한 마지막에 가깝게 배정) 치료 간격 확보, 장비 최소화, 전용물품 사용, 병실치료 전환 중 적용 가능한 방법을 고려한다.</li>
         <li>Alert 불일치, 장소·시간·장비 조정 등 특이사항은 치료실 내에 공유한다.</li>
       </ul>
     </div>
@@ -856,9 +1065,113 @@ function renderResult(){
 function bindResultEvents(){
   document.getElementById('btnRestart').onclick = resetState;
   document.getElementById('btnEdit').onclick = ()=>{ state.step=1; render(); };
+  appEl.querySelectorAll('[data-accordion]').forEach(el=>{
+    el.onclick=()=>{
+      const id = el.dataset.accordion;
+      state.expandedTreat[id] = !state.expandedTreat[id];
+      render();
+    };
+  });
 }
 
 render();
+
+/* =========================================================
+   PWA: 서비스워커 등록 + 홈 화면에 추가 안내
+   ========================================================= */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+
+(function setupInstallBanner(){
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if(isStandalone) return;
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    && !window.MSStream;
+
+  let deferredPrompt = null;
+  let banner = null;
+
+  function showBanner(html, onClick){
+    if(banner) return;
+    banner = document.createElement('div');
+    banner.className = 'install-banner';
+    banner.innerHTML = `
+      <div class="install-banner-text">${html}</div>
+      <button class="install-banner-close" aria-label="닫기">✕</button>
+    `;
+    document.body.appendChild(banner);
+    banner.querySelector('.install-banner-close').onclick = ()=>{
+      banner.remove(); banner = null;
+      try{ sessionStorage.setItem('installBannerDismissed','1'); }catch(e){}
+    };
+    if(onClick){
+      banner.addEventListener('click', (e)=>{
+        if(e.target.closest('.install-banner-close')) return;
+        onClick();
+      });
+    }
+  }
+
+  let dismissed = false;
+  try{ dismissed = sessionStorage.getItem('installBannerDismissed')==='1'; }catch(e){}
+  if(dismissed) return;
+
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    showBanner('📲 <b>홈 화면에 앱으로 추가</b>하기 — 탭하여 설치', async ()=>{
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if(banner){ banner.remove(); banner=null; }
+    });
+  });
+
+  if(isIOS){
+    showBanner('📲 <b>홈 화면에 추가</b>: 하단 공유 버튼 <span style="font-weight:800">⬆️</span> → "홈 화면에 추가" 선택', null);
+  }
+})();
 </script>
+
+<style>
+  .install-banner{
+    position:fixed;
+    left:12px;right:12px;bottom:12px;
+    max-width:480px;
+    margin:0 auto;
+    background:var(--navy);
+    color:#fff;
+    border-radius:14px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 8px 24px rgba(15,42,71,0.35);
+    z-index:100;
+    font-size:13px;
+    line-height:1.5;
+    cursor:pointer;
+  }
+  .install-banner-text{flex:1;}
+  .install-banner-close{
+    flex:0 0 auto;
+    background:rgba(255,255,255,0.15);
+    border:none;
+    color:#fff;
+    width:26px;height:26px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:12px;
+  }
+  @media (min-width:1024px){
+    .install-banner{left:auto;right:24px;bottom:24px;width:340px;}
+  }
+</style>
 </body>
 </html>
