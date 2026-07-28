@@ -608,11 +608,11 @@ const DISEASES = [
     note:'접촉주의 지침 적용, 치료실 이동 제한 없음 → 치료실 조건부 치료 우선. 단, 아포(spore) 형성균이므로 손위생·소독 방법이 다른 접촉주의 질환과 다름(알코올 젤 무효).'},
   {id:'tb', label:'활동성 또는 의심 결핵', precaution:'airborne',
     base:'WARD_ONLY_TB',
-    phaseToggle:'항결핵제 투여 2주 이상 경과, 전염성 감소(증상·객담검사 결과 포함), 담당의·감염관리팀 확인 완료',
-    note:'공기주의 유지 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 항결핵제 투여 2주 이상 + 전염성 감소 확인 후 치료실 치료 가능 여부를 재평가.'},
+    special:true,
+    note:'공기주의 유지 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 항결핵제 투여 2주 이상, 전염성 감소(증상·객담검사 결과 포함) 및 담당의·감염관리팀 확인 후 치료실 치료 가능 여부를 재평가.'},
   {id:'covid', label:'COVID-19', precaution:'droplet_air',
     base:'WARD_ONLY_COVID',
-    phaseToggle:'격리해제 또는 이동 허용 확인됨',
+    special:true,
     note:'격리 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 해제 또는 이동 허용 후 치료실 조건부 치료로 전환 검토. 마스크 제거가 필요한 치료는 별도 확인.'},
   {id:'flu', label:'Influenza', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
@@ -622,7 +622,7 @@ const DISEASES = [
     note:'중앙 지침상 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료는 보호구 수준을 상향 검토.'},
   {id:'scabies', label:'옴', precaution:'contact',
     base:'WARD_ONLY_SCABIES',
-    phaseToggle:'치료·환경관리 요건 충족 확인됨 (재개 가능)',
+    special:true,
     note:'격리기간 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 치료·환경관리 요건 충족 확인 후 치료실 치료 재개.'},
   {id:'unknown_fever', label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
@@ -680,15 +680,13 @@ const CHECK_ITEMS = [
 const state = {
   step:1,
   part:null,
-  patientType:'inpatient',
   disease:null,
-  conditionsMet:false,
   expandedTreat:{},
 };
 
 function resetState(){
-  state.step=1; state.part=null; state.patientType='inpatient';
-  state.disease=null; state.conditionsMet=false; state.expandedTreat={};
+  state.step=1; state.part=null;
+  state.disease=null; state.expandedTreat={};
   render();
 }
 
@@ -698,8 +696,7 @@ function resetState(){
 function decide(){
   const d = DISEASES.find(x=>x.id===state.disease);
   const part = PARTS.find(p=>p.id===state.part);
-  const isOutpatient = state.patientType==='outpatient';
-  const hasWard = part ? (part.ward && !isOutpatient) : false;
+  const hasWard = part ? part.ward : false;
 
   let result;
 
@@ -717,31 +714,16 @@ function decide(){
         desc:'이동이 허용되고 마스크 유지가 가능하면 치료실 조건부 치료를 우선 진행합니다. 발열·호흡기 증상이 심한 경우에는 치료를 보류합니다.'};
       break;
     case 'WARD_ONLY_TB':
-      if(state.conditionsMet){
-        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (요건 충족 확인됨)',
-          desc:'항결핵제 투여 2주 이상 경과, 전염성 감소 및 담당의·감염관리팀 확인이 완료된 상태로 표시되었습니다. 조건(보호구, 시간·공간 분리, 장비 제한, 치료 후 소독)을 충족하면 치료실 조건부 치료를 진행합니다.'};
-      }else{
-        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
-          desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리팀 확인 후에만 치료실 치료를 재검토합니다.'};
-      }
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
+        desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리팀 확인 후에만 치료실 치료를 재검토합니다.'};
       break;
     case 'WARD_ONLY_COVID':
-      if(state.conditionsMet){
-        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (격리해제·이동허용 확인됨)',
-          desc:'격리해제 또는 이동 허용이 확인된 상태로 표시되었습니다. 조건을 충족하면 치료실 조건부 치료로 진행합니다. 마스크 제거가 필요한 치료는 가능 여부를 별도 확인합니다.'};
-      }else{
-        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
-          desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
-      }
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
+        desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
       break;
     case 'WARD_ONLY_SCABIES':
-      if(state.conditionsMet){
-        result = {status:'CONDITIONAL', title:'치료실 조건부 치료 (재개 요건 충족 확인됨)',
-          desc:'치료·환경관리 요건 충족이 확인된 상태로 표시되었습니다. 조건을 충족하면 치료실 조건부 치료를 재개합니다.'};
-      }else{
-        result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
-          desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
-      }
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
+        desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
       break;
     case 'HOLD':
     default:
@@ -755,12 +737,6 @@ function decide(){
   if(result.status==='WARD_ONLY'){
     if(hasWard){
       loc.push('병실방문치료 프로그램을 통해 병실에서만 치료를 진행합니다. 치료실(운동치료실 등) 이동은 하지 않습니다.');
-    }else if(isOutpatient && part.ward){
-      // 병실방문치료 프로그램이 있는 파트(PT)라도 외래환자는 병실치료로 대체 불가
-      result.status='HOLD';
-      result.title='확인 전 치료 보류 (치료실 내원 불가 · 외래환자)';
-      result.desc='외래환자는 병실치료로 대체할 수 없고, 현재 질환은 치료실 내원도 제한되어 있어 지금 상태로는 치료를 진행할 수 없습니다. 담당 진료과 또는 감염관리팀을 통해 현재 감염상태와 격리해제 여부를 확인한 뒤 재평가합니다.';
-      loc.push('외래환자는 병실치료로 대체할 수 없어, 확인 전까지는 치료를 보류합니다.');
     }else{
       // 병실방문치료 미운영 파트는 병실도 치료실도 현재 시행할 수 없음 → 보류로 전환
       result.status='HOLD';
@@ -783,10 +759,6 @@ function decide(){
 
   if(result.status==='CONDITIONAL' || result.status==='WARD_ONLY'){
     loc.push('환자 이동은 필요한 범위로 최소화하고, 이동 전 도착 장소와 치료 가능 여부를 확인합니다. 환자의 오염 가능 부위를 덮거나 관리해 공용환경과의 접촉을 최소화하고, 이동에 사용한 휠체어·침상·워커·손잡이 등 접촉면은 사용 후 소독합니다.');
-  }
-
-  if(isOutpatient){
-    loc.push('외래환자는 예약·접수 또는 치료 전 현재 감염상태, 최근 검사결과, 격리해제 여부, 치료실 이동·사용 및 소독 가능 여부를 다시 확인합니다. 확인되지 않은 경우 확인 전까지 치료 시작을 보류하고 담당 진료과 또는 감염관리팀을 통해 최신 상태를 확인합니다.');
   }
 
   loc.push(companionNote(d.precaution));
@@ -850,7 +822,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v3.0';
+const APP_VERSION = 'v3.1';
 
 function headerHTML(){
   return `
@@ -893,17 +865,8 @@ function step1HTML(){
 
   return `
   <div class="card">
-    <h2>환자 구분</h2>
-    <p class="hint">외래환자는 병실치료로 대체하기 어렵고 과거 Alert가 현재 상태와 다르게 유지될 수 있어, 확인 절차가 강화됩니다.</p>
-    <div class="chip-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="chip ${state.patientType==='inpatient'?'sel':''}" data-ptype="inpatient">입원</div>
-      <div class="chip ${state.patientType==='outpatient'?'sel':''}" data-ptype="outpatient">외래</div>
-    </div>
-  </div>
-
-  <div class="card">
     <h2>치료 파트</h2>
-    <p class="hint">병실방문치료 프로그램은 물리치료(PT)에만 운영됩니다(외래환자는 제외). 작업치료·연하치료·언어치료는 치료실 내원이 허용된 경우에 한해 독립된 공간에서 시행합니다.</p>
+    <p class="hint">병실방문치료 프로그램은 물리치료(PT)에만 운영됩니다. 작업치료·연하치료·언어치료는 치료실 내원이 허용된 경우에 한해 독립된 공간에서 시행합니다.</p>
     <div class="chip-grid">${partChips}</div>
   </div>
 
@@ -917,7 +880,7 @@ const PRECAUTION_GROUP_ORDER = ['contact','contact_mdro','contact_cdiff','drople
 
 function step2HTML(){
   const groupsHTML = PRECAUTION_GROUP_ORDER.map(key=>{
-    const list = DISEASES.filter(d=>d.precaution===key && !d.phaseToggle);
+    const list = DISEASES.filter(d=>d.precaution===key && !d.special);
     if(list.length===0) return '';
     const rows = list.map(d=>`
       <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
@@ -931,24 +894,13 @@ function step2HTML(){
     `;
   }).join('');
 
-  const specialList = DISEASES.filter(d=>d.phaseToggle);
+  const specialList = DISEASES.filter(d=>d.special);
   const specialRows = specialList.map(d=>`
     <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
       <div class="dot"></div>
       <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
     </div>
   `).join('');
-
-  const selectedDisease = DISEASES.find(d=>d.id===state.disease);
-  const phaseCard = (selectedDisease && selectedDisease.phaseToggle) ? `
-  <div class="card">
-    <h2>격리·치료 단계 확인</h2>
-    <p class="hint">아래 항목이 담당의 또는 감염관리팀를 통해 확인된 경우에만 켜세요. 확인되지 않았다면 꺼진 상태로 두면 병실 치료만 가능으로 안내됩니다.</p>
-    <div class="toggle-row">
-      <div class="label">${selectedDisease.phaseToggle}</div>
-      <div class="switch ${state.conditionsMet?'on':''}" data-toggle="conditionsMet"></div>
-    </div>
-  </div>` : '';
 
   return `
   <div class="card">
@@ -962,7 +914,6 @@ function step2HTML(){
     <p class="hint">격리 단계(유지 중 / 요건 충족 후)에 따라 치료 가능 여부가 달라지는 질환입니다.</p>
     <div class="radio-list">${specialRows}</div>
   </div>
-  ${phaseCard}
   `;
 }
 
@@ -970,18 +921,8 @@ function bindWizardEvents(){
   appEl.querySelectorAll('[data-part]').forEach(el=>{
     el.onclick=()=>{state.part=el.dataset.part; render();};
   });
-  appEl.querySelectorAll('[data-ptype]').forEach(el=>{
-    el.onclick=()=>{state.patientType=el.dataset.ptype; render();};
-  });
   appEl.querySelectorAll('[data-disease]').forEach(el=>{
-    el.onclick=()=>{state.disease=el.dataset.disease; state.conditionsMet=false; render();};
-  });
-  appEl.querySelectorAll('[data-toggle]').forEach(el=>{
-    el.onclick=()=>{
-      const key=el.dataset.toggle;
-      state[key]=!state[key];
-      render();
-    };
+    el.onclick=()=>{state.disease=el.dataset.disease; render();};
   });
   const back = document.getElementById('btnBack');
   if(back) back.onclick=()=>{state.step--; render();};
@@ -1029,7 +970,7 @@ function renderResult(){
     <div class="step-label">RESULT</div>
 
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">${meta.kicker} · ${d.label} · ${part.label} · ${state.patientType==='outpatient'?'외래':'입원'}</div>
+      <div class="kicker">${meta.kicker} · ${d.label} · ${part.label}</div>
       <div class="title">${decision.title}</div>
       <div class="desc">${decision.desc}</div>
       <div class="tag-row">
