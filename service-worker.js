@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rehab-infection-check-v3.4';
+const CACHE_NAME = 'rehab-infection-check-v3.5';
 const ASSETS = [
   './',
   './index.html',
@@ -34,24 +34,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache-first for same-origin GET requests, with network fallback and cache refresh.
+// Network-first for same-origin GET requests: prefer the latest file from the
+// server whenever online, and fall back to the cache only when offline.
+// This means updating index.html alone (without re-uploading service-worker.js)
+// is enough for installed devices to pick up changes while online.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
