@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rehab-infection-check-v3.0';
+const CACHE_NAME = 'rehab-infection-check-v3.3';
 const ASSETS = [
   './',
   './index.html',

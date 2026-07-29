@@ -591,18 +591,12 @@ const PARTS = [
 ];
 
 const DISEASES = [
-  {id:'mrsa', label:'MRSA', precaution:'contact',
+  {id:'mrsa', label:'MRSA · CRPA(MRPA) · MRAB', precaution:'contact',
     base:'CONDITIONAL',
-    note:'접촉주의 지침 적용. 중앙 지침상 치료실 이동 제한 없음 → 치료실(운동치료실) 조건부 치료 우선.'},
-  {id:'vre', label:'VRE', precaution:'contact_mdro',
+    note:'접촉주의 지침 적용. 중앙 지침상 치료실 이동 제한 없음 → 치료실(운동치료실) 조건부 치료 우선. (MRSA·CRPA(MRPA)·MRAB 모두 동일 원칙 적용)'},
+  {id:'vre', label:'VRE · CRE(CPE)', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
-    note:'입원·외래 구분 없이 동일 원칙 적용. 치료실 이동이 별도로 제한되지 않아 치료실 조건부 치료를 우선 진행하되, 상황에 따라 병실치료도 대안으로 고려 가능.'},
-  {id:'cre_cpe', label:'CRE / CPE', precaution:'contact_mdro',
-    base:'CONDITIONAL_ALT_WARD',
-    note:'VRE와 동일한 재활치료 운영원칙 적용(감염관리팀 확인 예정 항목).'},
-  {id:'crpa_mrab', label:'CRPA(MRPA) · MRAB', precaution:'contact',
-    base:'CONDITIONAL',
-    note:'접촉주의 지침 적용. 치료실 조건부 치료 우선.'},
+    note:'입원·외래 구분 없이 동일 원칙 적용. 치료실 이동이 별도로 제한되지 않아 치료실 조건부 치료를 우선 진행하되, 상황에 따라 병실치료도 대안으로 고려 가능. (VRE·CRE(CPE) 모두 동일 원칙 적용, 감염관리팀 확인 예정 항목)'},
   {id:'cdiff', label:'C. difficile (CDI)', precaution:'contact_cdiff',
     base:'CONDITIONAL',
     note:'접촉주의 지침 적용, 치료실 이동 제한 없음 → 치료실 조건부 치료 우선. 단, 아포(spore) 형성균이므로 손위생·소독 방법이 다른 접촉주의 질환과 다름(알코올 젤 무효).'},
@@ -659,20 +653,6 @@ const PRECAUTION_PPE = {
   airborne:{tag:'공기주의', ppe:['중앙 지침에 따른 호흡기 보호구(N95/KF94 등)','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
   unclear:{tag:'표준주의 + 확인 필요', ppe:['표준주의 적용, 추가 보호구는 확인 후 결정','병동·담당의 확인 전까지 추가 보호구 임의 적용 보류']},
 };
-
-const CHECK_ITEMS = [
-  'EMR 감염 Alert와 현재 활성화 상태',
-  '격리 종류, 감염질환·감염균명과 감염 부위',
-  '최근 검사결과 및 격리해제 여부',
-  '발열·호흡기 증상·피부병변·설사 등 현재 증상',
-  '치료실 이동 가능 여부와 이동 방법',
-  '해당 치료 파트의 병실방문치료 프로그램 운영 여부',
-  '보호자·간병인·이송요원 동반 여부',
-  '필요한 환자·치료사·동반자 보호구',
-  '치료 중 사용할 장비와 교구 최소화',
-  '치료 후 접촉면·장비 소독시간 확보 가능 여부',
-  '불명확한 기준은 담당의 또는 감염관리팀 확인',
-];
 
 /* =========================================================
    상태
@@ -822,7 +802,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v3.1';
+const APP_VERSION = 'v3.3';
 
 function headerHTML(){
   return `
@@ -1010,13 +990,6 @@ function renderResult(){
         <li>소독 완료 및 필요한 접촉시간이 지난 후 다음 환자가 사용하도록 한다.</li>
         <li>다음 환자 전 소독시간 확보가 어려운 경우, 가능하면 하루 중 마지막 시간대에 배정하거나(마지막 시간이 어려우면 최대한 마지막에 가깝게 배정) 치료 간격 확보, 장비 최소화, 전용물품 사용, 병실치료 전환 중 적용 가능한 방법을 고려한다.</li>
         <li>Alert 불일치, 장소·시간·장비 조정 등 특이사항은 치료실 내에 공유한다.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="section-title"><span class="ico">5</span>확인할 항목</div>
-      <ul class="check">
-        ${CHECK_ITEMS.map(c=>`<li>${c}</li>`).join('')}
       </ul>
     </div>
 
