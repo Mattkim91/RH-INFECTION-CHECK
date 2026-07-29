@@ -802,7 +802,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v3.3';
+const APP_VERSION = 'v3.4';
 
 function headerHTML(){
   return `
@@ -1012,7 +1012,8 @@ function bindResultEvents(){
     el.onclick=()=>{
       const id = el.dataset.accordion;
       state.expandedTreat[id] = !state.expandedTreat[id];
-      render();
+      const item = el.closest('.accordion-item');
+      if(item) item.classList.toggle('open', !!state.expandedTreat[id]);
     };
   });
 }
