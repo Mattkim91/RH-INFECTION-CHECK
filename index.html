@@ -694,11 +694,11 @@ function decideOne(d, part){
 
   switch(d.base){
     case 'CONDITIONAL':
-      result = {status:'CONDITIONAL', title:'치료실 치료 우선 (조건부)',
+      result = {status:'CONDITIONAL', title:'치료실 치료 조건부 가능',
         desc:'중앙 지침상 치료실 이동이 제한되지 않습니다. 보호구, 시간·공간 분리, 장비 제한, 치료 후 소독 조건을 충족하면 치료실(운동치료실·작업치료실·언어치료실)에서 우선 진행합니다.'};
       break;
     case 'CONDITIONAL_ALT_WARD':
-      result = {status:'CONDITIONAL', title:'치료실 치료 우선 (조건부)',
+      result = {status:'CONDITIONAL', title:'치료실 치료 조건부 가능',
         desc:'중앙 지침상 치료실 이동이 별도로 제한되지 않아 조건 충족 시 치료실 치료를 우선 진행합니다. 이동이 어렵거나 환경관리가 부담되는 경우 병실치료도 대안으로 고려할 수 있습니다.'};
       break;
     case 'CONDITIONAL_SYMPTOM':
@@ -911,7 +911,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.3';
+const APP_VERSION = 'v1.4';
 
 function headerHTML(){
   return `
