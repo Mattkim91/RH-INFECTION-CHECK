@@ -195,19 +195,21 @@
     border-color:var(--teal);
     background:var(--mint-bg);
   }
-  .radio-row .dot{
-    width:18px;height:18px;border-radius:50%;
+  .radio-row .box{
+    width:18px;height:18px;border-radius:5px;
     border:2px solid var(--line);
     flex:0 0 18px;
     margin-top:1px;
     position:relative;
+    display:flex;align-items:center;justify-content:center;
   }
-  .radio-row.sel .dot{border-color:var(--teal);}
-  .radio-row.sel .dot::after{
-    content:"";
-    position:absolute;inset:3px;
-    background:var(--teal);
-    border-radius:50%;
+  .radio-row.sel .box{border-color:var(--teal);background:var(--teal);}
+  .radio-row.sel .box::after{
+    content:"✓";
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    line-height:1;
   }
   .radio-row .txt{font-size:13.5px;font-weight:600;line-height:1.4;}
   .radio-row .txt small{display:block;font-weight:400;color:var(--sub);font-size:11.5px;margin-top:2px;}
@@ -590,13 +592,22 @@ const PARTS = [
   {id:'st', label:'언어치료(ST)', ward:false},
 ];
 
+const STAFF_ROLES = [
+  {id:'doctor', label:'의사직'},
+  {id:'nurse', label:'간호직'},
+];
+
 const DISEASES = [
   {id:'mrsa', label:'MRSA · CRPA(MRPA) · MRAB', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의 지침 적용. 중앙 지침상 치료실 이동 제한 없음 → 치료실(운동치료실) 조건부 치료 우선. (MRSA·CRPA(MRPA)·MRAB 모두 동일 원칙 적용)'},
-  {id:'vre', label:'VRE · CRE(CPE)', precaution:'contact_mdro',
+  {id:'vre', label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
-    note:'입원·외래 구분 없이 동일 원칙 적용. 치료실 이동이 별도로 제한되지 않아 치료실 조건부 치료를 우선 진행하되, 상황에 따라 병실치료도 대안으로 고려 가능. (VRE·CRE(CPE) 모두 동일 원칙 적용, 감염관리팀 확인 예정 항목)'},
+    note:'입원·외래 구분 없이 동일 원칙 적용. 치료실 이동이 별도로 제한되지 않아 치료실 조건부 치료를 우선 진행하되, 상황에 따라 병실치료도 대안으로 고려 가능.'},
+  {id:'cre', label:'CRE(CPE)', precaution:'contact_mdro',
+    base:'WARD_ONLY_CRE',
+    special:true,
+    note:'VRE와 달리 병실치료만 가능. 일반 치료실 이동은 하지 않으며, 병실방문치료 프로그램을 운영하지 않는 파트는 담당의·감염관리팀 확인 후 재평가.'},
   {id:'cdiff', label:'C. difficile (CDI)', precaution:'contact_cdiff',
     base:'CONDITIONAL',
     note:'접촉주의 지침 적용, 치료실 이동 제한 없음 → 치료실 조건부 치료 우선. 단, 아포(spore) 형성균이므로 손위생·소독 방법이 다른 접촉주의 질환과 다름(알코올 젤 무효).'},
@@ -660,22 +671,23 @@ const PRECAUTION_PPE = {
 const state = {
   step:1,
   part:null,
-  disease:null,
+  diseases:[],
   expandedTreat:{},
 };
 
 function resetState(){
   state.step=1; state.part=null;
-  state.disease=null; state.expandedTreat={};
+  state.diseases=[]; state.expandedTreat={};
   render();
+  window.scrollTo(0,0);
 }
 
 /* =========================================================
    판정 로직
    ========================================================= */
-function decide(){
-  const d = DISEASES.find(x=>x.id===state.disease);
-  const part = PARTS.find(p=>p.id===state.part);
+const STATUS_PRIORITY = {CONDITIONAL:1, WARD_ONLY:2, HOLD:3};
+
+function decideOne(d, part){
   const hasWard = part ? part.ward : false;
 
   let result;
@@ -694,8 +706,8 @@ function decide(){
         desc:'이동이 허용되고 마스크 유지가 가능하면 치료실 조건부 치료를 우선 진행합니다. 발열·호흡기 증상이 심한 경우에는 치료를 보류합니다.'};
       break;
     case 'WARD_ONLY_TB':
-      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (치료실 내원 불가)',
-        desc:'공기주의가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 경과만으로 판단하지 않으며, 전염성 감소·증상·객담검사 및 담당의·감염관리팀 확인 후에만 치료실 치료를 재검토합니다.'};
+      result = {status:'HOLD', title:'재활치료 보류 (결핵 — 기본 원칙)',
+        desc:'활동성 또는 의심 결핵 환자는 재활치료 보류를 기본으로 합니다. 항결핵제 투여 1주 경과 시 증상에 따라 의료진과 상의하여 병실물리치료를 시행할 수 있고, 2주 경과 시 증상에 따라 의료진과 상의하여 재활치료실 내방을 검토할 수 있습니다.'};
       break;
     case 'WARD_ONLY_COVID':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
@@ -704,6 +716,10 @@ function decide(){
     case 'WARD_ONLY_SCABIES':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
         desc:'격리기간 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 치료·환경관리 요건 충족이 확인되면 치료실 치료를 재개할 수 있습니다.'};
+      break;
+    case 'WARD_ONLY_CRE':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (CRE(CPE))',
+        desc:'CRE(CPE)는 VRE와 달리 치료실 이동 없이 병실치료만 가능합니다. 병실방문치료 프로그램을 운영하지 않는 파트는 담당의·감염관리팀 확인 후 재평가합니다.'};
       break;
     case 'HOLD':
     default:
@@ -725,16 +741,23 @@ function decide(){
       loc.push('병실방문치료 프로그램이 없고 치료실 내원도 제한되어, 확인 전까지는 치료를 보류합니다.');
     }
   }else if(result.status==='CONDITIONAL'){
-    if(hasWard){
+    if(d.id==='vre' && part && part.id==='pt'){
+      loc.push('타과입원환자: 병실물리치료만 시행합니다.');
+      loc.push('재활입원환자: 111병동재활치료실에 우선적으로 배정하며, 기능 수준에 따라 필요한 경우 1층 운동치료실로 배정합니다.');
+    }else if(hasWard){
       loc.push('운동치료실에서 다른 환자와의 시간적·공간적 접촉을 최소화하여 치료를 진행합니다. 이동이 어렵거나 치료실 환경관리가 충분하지 않은 경우에는 병실치료도 대안으로 고려할 수 있습니다.');
     }else{
       loc.push(`${part.label}는 병실방문치료 프로그램을 운영하지 않으므로, 치료실 내원이 허용된 경우 독립된 치료공간에서 시행합니다.`);
-      if(state.part==='ot') loc.push('작업치료실 내 독립된 치료공간을 우선 활용하고 다른 환자와 치료시간·동선을 분리합니다.');
-      if(state.part==='swallow') loc.push('작업치료실 내 독립된 치료공간에서 시행하며, 비산 위험이 있는 경우 눈 보호구 등 추가 보호구를 적용합니다.');
-      if(state.part==='st') loc.push('1:1 독립 치료실에서 환자 간 치료시간과 이동 동선이 겹치지 않도록 조정합니다.');
+      if(part.id==='ot') loc.push('작업치료실 내 독립된 치료공간을 우선 활용하고 다른 환자와 치료시간·동선을 분리합니다.');
+      if(part.id==='swallow') loc.push('작업치료실 내 독립된 치료공간에서 시행하며, 비산 위험이 있는 경우 눈 보호구 등 추가 보호구를 적용합니다.');
+      if(part.id==='st') loc.push('1:1 독립 치료실에서 환자 간 치료시간과 이동 동선이 겹치지 않도록 조정합니다.');
     }
   }else if(result.status==='HOLD'){
     loc.push('확인 전까지 치료를 시작하지 않습니다. 병동 또는 담당의 확인 → 필요 시 감염관리팀 문의 순서로 진행합니다.');
+    if(d.id==='tb'){
+      if(hasWard) loc.push('항결핵제 투여 1주 경과: 증상에 따라 의료진과 상의하여 병실물리치료 시행 가능.');
+      loc.push('항결핵제 투여 2주 경과: 증상에 따라 의료진과 상의하여 재활치료실 내방 가능.');
+    }
   }
 
   if(result.status==='CONDITIONAL' || result.status==='WARD_ONLY'){
@@ -743,8 +766,95 @@ function decide(){
 
   loc.push(companionNote(d.precaution));
   result.location = loc;
+  result.disease = d;
 
   return result;
+}
+
+function decideForPart(diseases, part){
+  const perDisease = diseases.map(d=>decideOne(d, part));
+
+  // 가장 제한적인(우선순위 높은) 결과를 전체 기준으로 채택
+  let worst = perDisease[0];
+  for(const r of perDisease){
+    if(STATUS_PRIORITY[r.status] > STATUS_PRIORITY[worst.status]) worst = r;
+  }
+  const worstDiseases = perDisease.filter(r=>r.status===worst.status).map(r=>r.disease.label);
+
+  const multi = diseases.length > 1;
+
+  // 치료 장소: 모든 질환의 안내를 중복 제거하여 통합
+  const locSet = [];
+  perDisease.forEach(r=>{
+    r.location.forEach(line=>{ if(!locSet.includes(line)) locSet.push(line); });
+  });
+  if(multi){
+    locSet.unshift(`선택한 질환(${diseases.map(d=>d.label).join(', ')}) 중 가장 제한적인 기준(${worstDiseases.join(', ')})을 전체 치료 기준으로 적용합니다.`);
+  }
+
+  return {
+    status: worst.status,
+    title: multi ? `복합 감염 — ${worst.title}` : worst.title,
+    desc: worst.desc,
+    location: locSet,
+  };
+}
+
+// 질환의 기본 등급만 간단히 산출 (파트 무관 — 병동 요약용, 세부 치료실 배정 로직 없이 참고 수준)
+function baseStatusOf(d){
+  if(d.base==='HOLD') return 'HOLD';
+  if(d.base.indexOf('WARD_ONLY')===0) return 'WARD_ONLY';
+  return 'CONDITIONAL';
+}
+
+function buildPrecautionSummary(diseases){
+  const precautions = [...new Set(diseases.map(d=>d.precaution))];
+  const ppeTag = precautions.map(p=>PRECAUTION_PPE[p].tag).join(' + ');
+  const ppeItems = [];
+  precautions.forEach(p=>{
+    PRECAUTION_PPE[p].ppe.forEach(item=>{ if(!ppeItems.includes(item)) ppeItems.push(item); });
+  });
+  const companionNotes = [];
+  precautions.forEach(p=>{
+    const note = companionNote(p);
+    if(!companionNotes.includes(note)) companionNotes.push(note);
+  });
+  return {ppeTag, ppeItems, companionNotes};
+}
+
+const NURSE_CHECKLIST = [
+  'EMR 감염 Alert와 현재 격리상태 확인',
+  '최신 검사결과 및 격리해제 여부 확인',
+  '이송 전 환자의 발열·호흡기·피부·설사 등 증상 확인',
+  '치료실 이동 가능 여부 및 이동 방법(휠체어·침상 등) 확인',
+  '환자의 오염 가능 부위 덮개·관리',
+  '이동 장비(휠체어·침상·워커 등) 접촉면 소독 여부 확인',
+  '보호자·간병인·이송요원에게 필요한 보호구 안내',
+  '치료팀에 격리상태·Alert 불일치 등 특이사항 사전 공유',
+];
+
+function decide(){
+  const diseases = DISEASES.filter(x=>state.diseases.includes(x.id));
+
+  if(state.part==='doctor'){
+    const perPart = PARTS.map(part=>({part, result: decideForPart(diseases, part)}));
+    let worst = perPart[0].result;
+    for(const {result} of perPart){
+      if(STATUS_PRIORITY[result.status] > STATUS_PRIORITY[worst.status]) worst = result;
+    }
+    return {role:'doctor', diseases, perPart, status:worst.status, ...buildPrecautionSummary(diseases)};
+  }
+
+  if(state.part==='nurse'){
+    const statuses = diseases.map(baseStatusOf);
+    let status = 'CONDITIONAL';
+    if(statuses.includes('HOLD')) status = 'HOLD';
+    else if(statuses.includes('WARD_ONLY')) status = 'WARD_ONLY';
+    return {role:'nurse', diseases, status, checklist:NURSE_CHECKLIST, ...buildPrecautionSummary(diseases)};
+  }
+
+  const part = PARTS.find(p=>p.id===state.part);
+  return {role:'therapy', diseases, part, ...decideForPart(diseases, part), ...buildPrecautionSummary(diseases)};
 }
 
 function companionNote(precaution){
@@ -787,7 +897,6 @@ function render(){
     appEl.innerHTML = renderResult();
     bindResultEvents();
   }
-  window.scrollTo(0,0);
 }
 
 function progressHTML(){
@@ -802,7 +911,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v3.4';
+const APP_VERSION = 'v1.3';
 
 function headerHTML(){
   return `
@@ -821,7 +930,7 @@ function renderWizard(){
 
   const canNext =
     (state.step===1 && state.part) ||
-    (state.step===2 && state.disease);
+    (state.step===2 && state.diseases.length>0);
 
   return `
   ${headerHTML()}
@@ -843,11 +952,21 @@ function step1HTML(){
     <div class="chip ${state.part===p.id?'sel':''}" data-part="${p.id}">${p.label}</div>
   `).join('');
 
+  const staffChips = STAFF_ROLES.map(r=>`
+    <div class="chip ${state.part===r.id?'sel':''}" data-part="${r.id}">${r.label}</div>
+  `).join('');
+
   return `
   <div class="card">
-    <h2>치료 파트</h2>
+    <h2>치료직</h2>
     <p class="hint">병실방문치료 프로그램은 물리치료(PT)에만 운영됩니다. 작업치료·연하치료·언어치료는 치료실 내원이 허용된 경우에 한해 독립된 공간에서 시행합니다.</p>
     <div class="chip-grid">${partChips}</div>
+  </div>
+
+  <div class="card">
+    <h2>병동</h2>
+    <p class="hint">의사직은 처방 가능한 치료실 중심으로, 간호직은 이송 전 확인사항 중심으로 안내합니다.</p>
+    <div class="chip-grid">${staffChips}</div>
   </div>
 
   <div class="alert-note" style="margin:0 2px 14px;">
@@ -863,8 +982,8 @@ function step2HTML(){
     const list = DISEASES.filter(d=>d.precaution===key && !d.special);
     if(list.length===0) return '';
     const rows = list.map(d=>`
-      <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
-        <div class="dot"></div>
+      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}">
+        <div class="box"></div>
         <div class="txt">${d.label}</div>
       </div>
     `).join('');
@@ -876,8 +995,8 @@ function step2HTML(){
 
   const specialList = DISEASES.filter(d=>d.special);
   const specialRows = specialList.map(d=>`
-    <div class="radio-row ${state.disease===d.id?'sel':''}" data-disease="${d.id}">
-      <div class="dot"></div>
+    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}">
+      <div class="box"></div>
       <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
     </div>
   `).join('');
@@ -885,7 +1004,7 @@ function step2HTML(){
   return `
   <div class="card">
     <h2>감염 유형</h2>
-    <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 하나 선택하세요.</p>
+    <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
     ${groupsHTML}
   </div>
 
@@ -902,59 +1021,135 @@ function bindWizardEvents(){
     el.onclick=()=>{state.part=el.dataset.part; render();};
   });
   appEl.querySelectorAll('[data-disease]').forEach(el=>{
-    el.onclick=()=>{state.disease=el.dataset.disease; render();};
+    el.onclick=()=>{
+      const id = el.dataset.disease;
+      const i = state.diseases.indexOf(id);
+      if(i===-1) state.diseases.push(id); else state.diseases.splice(i,1);
+      render();
+    };
   });
   const back = document.getElementById('btnBack');
-  if(back) back.onclick=()=>{state.step--; render();};
+  if(back) back.onclick=()=>{state.step--; render(); window.scrollTo(0,0);};
   const next = document.getElementById('btnNext');
   if(next) next.onclick=()=>{
     if(next.disabled) return;
-    state.step++; render();
+    state.step++; render(); window.scrollTo(0,0);
   };
 }
 
 function renderResult(){
-  const d = DISEASES.find(x=>x.id===state.disease);
-  const part = PARTS.find(p=>p.id===state.part);
   const decision = decide();
-  const meta = STATUS_META[decision.status];
-  const ppeInfo = PRECAUTION_PPE[d.precaution];
+  const diseases = decision.diseases;
 
-  const tbBanner = (state.disease==='tb') ? `
+  const tbBanner = state.diseases.includes('tb') ? `
     <div class="tb-warning">
       <b>⚠ 활동성/의심 결핵 — 별도 강조</b>
       활동성 폐결핵 또는 공기주의 격리가 필요한 상태에서는 병실치료를 포함한 재활치료 시행 여부를 감염관리 기준에 따라 제한합니다. 항결핵제 2주 이상 투여만으로 치료실 치료를 판단하지 않으며, 반드시 담당의 또는 감염관리팀 확인을 거칩니다.
     </div>` : '';
 
-  const cdiffBanner = (state.disease==='cdiff') ? `
+  const cdiffBanner = state.diseases.includes('cdiff') ? `
     <div class="info-note">
       <b>ℹ C. difficile — 손위생·소독 방법 별도 강조</b>
       C. difficile는 아포(spore)를 형성하여 알코올 손소독제만으로는 제거되지 않습니다. 반드시 비누와 흐르는 물로 손을 씻고, 접촉 표면과 사용 장비는 차아염소산나트륨 등 아포에 유효한 소독제로 소독합니다.
     </div>` : '';
 
-  const treatAccordion = TREATMENTS.map(t=>{
-    const open = !!state.expandedTreat[t.id];
-    return `
-    <div class="accordion-item ${open?'open':''}">
-      <div class="accordion-header" data-accordion="${t.id}">
-        <span>${t.label}</span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="accordion-body">${t.guide}</div>
-    </div>`;
-  }).join('');
+  const diseaseLabel = diseases.map(d=>d.label).join(' + ');
 
-  return `
-  ${headerHTML()}
-  <main>
-    <div class="step-label">RESULT</div>
+  let bodyHTML = '';
 
+  if(decision.role==='doctor'){
+    const meta = STATUS_META[decision.status];
+    const partRows = decision.perPart.map(({part,result})=>{
+      return `
+      <div class="radio-row" style="cursor:default;">
+        <div class="txt">
+          <b>${part.label}</b><small>${result.title}</small>
+        </div>
+      </div>`;
+    }).join('');
+
+    bodyHTML = `
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">${meta.kicker} · ${d.label} · ${part.label}</div>
+      <div class="kicker">처방 참고 · ${diseaseLabel} · 의사직</div>
+      <div class="title">파트별 처방 가능한 치료실</div>
+      <div class="desc">아래는 파트별 참고용 요약입니다. 최종 처방 가능 여부는 담당 치료팀 확인을 거칩니다.</div>
+      <div class="tag-row">
+        <span class="tag">${decision.ppeTag}</span>
+      </div>
+    </div>
+
+    ${tbBanner}
+    ${cdiffBanner}
+
+    <div class="card">
+      <div class="section-title"><span class="ico">1</span>파트별 치료실 배정 현황</div>
+      <div class="radio-list">${partRows}</div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">2</span>보호구</div>
+      <ul class="list">
+        ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
+      </ul>
+    </div>
+    `;
+  }else if(decision.role==='nurse'){
+    const meta = STATUS_META[decision.status];
+    bodyHTML = `
+    <div class="result-banner ${meta.cls}">
+      <div class="kicker">이송 참고 · ${diseaseLabel} · 간호직</div>
+      <div class="title">이송 전 확인사항</div>
+      <div class="desc">치료실 이송 전 아래 항목을 확인하고, 필요한 보호구와 동반자 안내를 함께 준비하세요.</div>
+      <div class="tag-row">
+        <span class="tag">${decision.ppeTag}</span>
+      </div>
+    </div>
+
+    ${tbBanner}
+    ${cdiffBanner}
+
+    <div class="card">
+      <div class="section-title"><span class="ico">1</span>이송 전 확인사항</div>
+      <ul class="list">
+        ${decision.checklist.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">2</span>보호구</div>
+      <ul class="list">
+        ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">3</span>보호자·간병인·이송요원</div>
+      <ul class="list">
+        ${decision.companionNotes.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+    </div>
+    `;
+  }else{
+    const meta = STATUS_META[decision.status];
+    const treatAccordion = TREATMENTS.map(t=>{
+      const open = !!state.expandedTreat[t.id];
+      return `
+      <div class="accordion-item ${open?'open':''}">
+        <div class="accordion-header" data-accordion="${t.id}">
+          <span>${t.label}</span>
+          <span class="chev">▾</span>
+        </div>
+        <div class="accordion-body">${t.guide}</div>
+      </div>`;
+    }).join('');
+
+    bodyHTML = `
+    <div class="result-banner ${meta.cls}">
+      <div class="kicker">${meta.kicker} · ${diseaseLabel} · ${decision.part.label}</div>
       <div class="title">${decision.title}</div>
       <div class="desc">${decision.desc}</div>
       <div class="tag-row">
-        <span class="tag">${ppeInfo.tag}</span>
+        <span class="tag">${decision.ppeTag}</span>
       </div>
     </div>
 
@@ -971,7 +1166,7 @@ function renderResult(){
     <div class="card">
       <div class="section-title"><span class="ico">2</span>보호구</div>
       <ul class="list">
-        ${ppeInfo.ppe.map(p=>`<li>${p}</li>`).join('')}
+        ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
       </ul>
     </div>
 
@@ -992,7 +1187,14 @@ function renderResult(){
         <li>Alert 불일치, 장소·시간·장비 조정 등 특이사항은 치료실 내에 공유한다.</li>
       </ul>
     </div>
+    `;
+  }
 
+  return `
+  ${headerHTML()}
+  <main>
+    <div class="step-label">RESULT</div>
+    ${bodyHTML}
     <div class="disclaimer">
       <b>본 도구는 병원 감염관리 지침을 대체하지 않으며</b>, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
     </div>
@@ -1007,7 +1209,7 @@ function renderResult(){
 
 function bindResultEvents(){
   document.getElementById('btnRestart').onclick = resetState;
-  document.getElementById('btnPrev').onclick = ()=>{ state.step=2; render(); };
+  document.getElementById('btnPrev').onclick = ()=>{ state.step=2; render(); window.scrollTo(0,0); };
   appEl.querySelectorAll('[data-accordion]').forEach(el=>{
     el.onclick=()=>{
       const id = el.dataset.accordion;
