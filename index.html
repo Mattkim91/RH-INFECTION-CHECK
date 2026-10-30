@@ -670,15 +670,17 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disclaimer{border:1px solid var(--line);border-left:4px solid var(--navy-2);border-style:solid;background:#fff;font-size:14.5px;}
 @media (min-width:701px){header.top{border-radius:20px 20px 0 0;}}
 
-.disease-search{display:flex;gap:8px;align-items:center;width:min(100%,300px);margin:2px 0 12px;}
-.disease-search input{flex:1;min-width:0;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:inherit;outline:none;-webkit-appearance:none;}
-.disease-search input::placeholder{color:#9aa4ad;}
-.disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
 .dz-searching .card{background:transparent;border:0;box-shadow:none;padding:0;margin:0 0 4px;}
 .dz-searching .card>h2,.dz-searching .card>.hint,.dz-searching .subgroup-title{display:none!important;}
 .dz-searching .radio-list{margin:0 0 6px;}
 .disease-count{font-size:13px;color:#5b6670;margin:-6px 0 8px;}
-.disease-search button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;cursor:pointer;}
+.disease-search{position:relative;flex:1 1 120px;min-width:110px;max-width:180px;margin-left:auto;}
+.disease-search input{width:100%;box-sizing:border-box;height:36px;padding:0 36px 0 12px;border:1px solid var(--line);border-radius:999px;font-size:14.5px;font-family:inherit;background:#fff;color:inherit;outline:none;-webkit-appearance:none;appearance:none;}
+.disease-search input::-webkit-search-cancel-button{display:none;}
+.disease-search input::placeholder{color:#9aa4ad;}
+.disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
+.disease-search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;padding:0;border:0;background:transparent;font-size:13px;line-height:28px;cursor:pointer;color:#5b6670;}
+.ctx-bar-with-search{flex-wrap:nowrap;}
 .ctx-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}
 .ctx-bar-lab{font-size:13px;font-weight:700;color:#6b7680;}
 .ctx-pill{font-size:13.5px;font-weight:700;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 12px;}
@@ -1114,7 +1116,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.37';
+const APP_VERSION = 'v1.38';
 
 function headerHTML(){
   return `
@@ -1138,6 +1140,13 @@ function contextBarHTML(){
   if(!lab) return '';
   return `<div class="ctx-bar" aria-label="선택 직종"><span class="ctx-bar-lab">직종</span><span class="ctx-pill">${lab}</span></div>`;
 }
+function contextBarSearchHTML(){
+  const lab = selectedPartLabel();
+  return `<div class="ctx-bar ctx-bar-with-search" aria-label="선택 직종 및 질환 검색">${lab?`<span class="ctx-bar-lab">직종</span><span class="ctx-pill">${lab}</span>`:''}<div class="disease-search">
+      <input type="search" id="diseaseSearch" placeholder="질환 검색" autocomplete="off" aria-label="질환 검색">
+      <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
+    </div></div>`;
+}
 function renderWizard(){
   let body = '';
   if(state.step===1) body = step1HTML();
@@ -1151,7 +1160,7 @@ function renderWizard(){
   ${headerHTML()}
   <main>
     <div class="step-label">${state.step===1?'1. 직종':'2. 질환'}</div>
-    ${state.step>=2 ? contextBarHTML() : ''}
+    ${state.step===2 ? contextBarSearchHTML() : (state.step>2 ? contextBarHTML() : '')}
     ${body}
   </main>
   ${state.step===1 ? '' : `<footer class="nav">
@@ -1307,10 +1316,6 @@ function step2HTML(){
   `).join('');
 
   return `
-    <div class="disease-search">
-      <input type="search" id="diseaseSearch" placeholder="질환명 검색 (예: MRSA, 결핵)" autocomplete="off" aria-label="질환 검색">
-      <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
-    </div>
     <div class="disease-count" id="diseaseCount" style="display:none"></div>
   <div id="diseaseWrap">
   <div class="card">
