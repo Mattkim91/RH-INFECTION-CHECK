@@ -1139,7 +1139,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.63';
+const APP_VERSION = 'v1.64';
 
 function headerHTML(){
   return `
@@ -1491,7 +1491,7 @@ const NURSE_REASON = {
   scabies:'옴 접촉주의 격리기간 — 병실PT만(작업·연하·언어 불가)',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
-  vre:'VRE 접촉주의 — 병실PT만 (단, RH환자만 치료실 이송 가능)',
+  vre:'VRE 접촉주의 — 병실PT만 (RH환자만 치료실 이송 가능)',
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 치료실 이송 가능',
   mrsa:'접촉주의',
   cdiff:'CDI 접촉주의(아포)',
@@ -1527,13 +1527,13 @@ function nurseCondLines(ids){
   if(ids.includes('flu')) L.push('독감: 발열·기침이 호전되고 마스크 유지가 되면 치료실 진행');
   if(ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) L.push('이동 중 환자 마스크 착용 · 마스크 벗는 과제(연하 등)는 독립 공간에서 진행');
   if(ids.includes('cdiff')||ids.includes('rota_noro')) L.push((ids.includes('cdiff')?'CDI':'로타·노로')+': 치료실은 물·비누 손위생과 접촉면·장비 소독으로 운영');
-  if(ids.includes('vre')) L.push('VRE: 병실PT만 · 단, RH환자만 치료실 이송 가능');
+  if(ids.includes('vre')) L.push('VRE: 병실PT만 · RH환자만 치료실 이송 가능');
   L.push('다른 환자와 시간·공간 분리(가급적 마지막 시간대), 치료 후 소독은 치료실에서 진행');
   return L.slice(0,4);
 }
 function nurseScenarioHTML(decision, ids){
   // v1.46: 간호 화면은 「보낼지」만 — 보호구·동선·소독 등 치료실 몫은 치료직 화면에서
-  // v1.62: VRE는 병실PT(이용 가능)를 위 · 치료실(제한사항·RH환자만)을 아래
+  // v1.62/v1.64: VRE·WARD_ONLY는 병실PT를 위 · 치료실을 아래
   const s = decision.status;
   const isVre = s==='CONDITIONAL' && ids.includes('vre');
   const roomOk = s==='CONDITIONAL';
@@ -1548,7 +1548,8 @@ function nurseScenarioHTML(decision, ids){
   const wardPill = isVre ? '이용 가능' : (wardOk?(s==='WARD_ONLY'?'가능':'대안'):'보류');
   const roomBlock = `<div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomPillCls}">${roomPill}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>`;
   const wardBlock = `<div class="scenario ${wardOk?'':'scenario-off'}"><div class="sc-head">🛏 병실PT <span class="status-pill ${wardOk?'pill-ward':'pill-hold'}">${wardPill}</span></div><p class="hint" style="margin:0;">${wardNote}</p></div>`;
-  const blocks = isVre ? (wardBlock + roomBlock) : (roomBlock + wardBlock);
+  const wardFirst = isVre || s==='WARD_ONLY';
+  const blocks = wardFirst ? (wardBlock + roomBlock) : (roomBlock + wardBlock);
   return `<div class="card"><div class="section-title"><span class="ico">2</span>어디서 치료하나</div>
     ${blocks}
   </div>`;
@@ -1561,10 +1562,11 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   /* v1.55: 독감도 「치료실 이송 가능」 + 증상 한 줄 */
   const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'치료실 가능', CONDITIONAL_SYMPTOM:'증상 확인'};
   const reasonList = diseases.map(d=>`<li>${NURSE_REASON[d.id]||d.label}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
-  const branch = symCond ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
-  /* v1.58: VRE 병실PT만 + RH 예외 한 줄 · 복합 질환 판정 근거 · 보류 확인 경로 */
-  const vreTip = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">단, RH환자만 치료실 이송 가능</div>` : '';
+  /* v1.58/v1.64: VRE 병실PT만 + RH 예외 · 배너는 ward 톤 · tip 「단,」 없음 */
   const vreTitle = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? '병실PT만' : null;
+  const tipColor = vreTitle ? 'margin-top:6px;color:#fff;font-weight:600;opacity:.95;' : 'margin-top:6px;color:#b45309;font-weight:600;';
+  const branch = symCond ? `<div class="amber-note" style="${tipColor}">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
+  const vreTip = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? `<div class="amber-note" style="${tipColor}">RH환자만 치료실 이송 가능</div>` : '';
   let driver = '';
   if(diseases.length>1 && decision.status!=='CONDITIONAL'){
     const dd = diseases.filter(d=>baseStatusOf(d)===decision.status);
@@ -1575,7 +1577,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const open = !!state.expandedTreat.nurseFull;
   const nurseCdiffNote = cdiffBanner ? `<div class="info-note"><b>ℹ C. difficile</b> 아포 형성 — 알코올 손소독만으로는 제거되지 않습니다(물·비누 손위생).</div>` : '';
   return `
-    <div class="result-banner ${v.cls}">
+    <div class="result-banner ${vreTitle ? 'banner-ward' : v.cls}">
       <div class="title">${vreTitle ? vreTitle : verdictTitleHTML(v.title)}</div>
       <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
       ${branch}${vreTip}${driver}${holdLine}
@@ -1667,7 +1669,7 @@ function renderResult(){
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
       <div class="part-status-list">${reasons}</div>
       ${docSym?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
-      ${diseases.some(d=>d.id==='vre')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 병실PT만 · 단, RH환자만 치료실 이송 가능</div>':''}
+      ${diseases.some(d=>d.id==='vre')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 병실PT만 · RH환자만 치료실 이송 가능</div>':''}
       <p class="hint">${banner.desc}</p>
     </div>
 
