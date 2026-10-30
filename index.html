@@ -670,7 +670,7 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disclaimer{border:1px solid var(--line);border-left:4px solid var(--navy-2);border-style:solid;background:#fff;font-size:14.5px;}
 @media (min-width:701px){header.top{border-radius:20px 20px 0 0;}}
 
-.disease-search{display:flex;gap:8px;align-items:center;margin:4px 0 10px;}
+.disease-search{display:flex;gap:8px;align-items:center;width:min(100%,300px);margin:2px 0 12px;}
 .disease-search input{flex:1;min-width:0;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:inherit;outline:none;-webkit-appearance:none;}
 .disease-search input::placeholder{color:#9aa4ad;}
 .disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
@@ -1110,7 +1110,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.33';
+const APP_VERSION = 'v1.34';
 
 function headerHTML(){
   return `
@@ -1296,14 +1296,14 @@ function step2HTML(){
   `).join('');
 
   return `
-  <div class="card">
-    <h2>감염 유형</h2>
     <div class="disease-search">
       <input type="search" id="diseaseSearch" placeholder="질환명 검색 (예: MRSA, 결핵)" autocomplete="off" aria-label="질환 검색">
       <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
     </div>
+  <div class="card">
+    <h2>감염 유형</h2>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
-    <p class="hint">질환명을 검색하거나, 아래로 넘겨 목록에서 고르세요. 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
+    <p class="hint">질환명을 검색하거나, 아래로 넘겨 목록에서 고르세요.</p>
     ${groupsHTML}
     <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
   </div>
