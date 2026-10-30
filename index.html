@@ -285,6 +285,13 @@
     color:var(--navy);
   }
 
+  footer.nav.result-nav .btn{flex:1; width:100%;}
+  .restart-wrap{padding:0 16px 10px; text-align:center;}
+  .btn-text{
+    background:none; border:none; color:var(--teal); font-size:15px; font-weight:700;
+    padding:8px 12px; cursor:pointer; font-family:inherit; text-decoration:underline; text-underline-offset:3px;
+  }
+
   /* Result screen */
   .result-banner{
     border-radius:var(--radius);
@@ -1078,7 +1085,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.23';
+const APP_VERSION = 'v1.24';
 
 function headerHTML(){
   return `
@@ -1690,14 +1697,14 @@ function renderResult(){
     <div class="step-label">3. 결과</div>
     ${bodyHTML}
     <div class="disclaimer">
-      <b>본 도구는 병원 감염관리 지침을 대체하지 않으며</b>, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
+      본 도구는 병원 감염관리 지침을 대체하지 않으며, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
     </div>
   </main>
-  <div class="nav-hint">이전 = 질환 선택으로 · 선택은 유지 / 처음부터 다시 = 전체 초기화</div>
-  <footer class="nav">
-    <button class="btn ghost" id="btnPrev" type="button">이전</button>
-    <button class="btn primary restart" id="btnRestart" type="button">처음부터 다시</button>
+  <div class="nav-hint">이전 = 질환 선택으로 · 선택은 유지</div>
+  <footer class="nav result-nav">
+    <button class="btn primary" id="btnPrev" type="button">이전</button>
   </footer>
+  <div class="restart-wrap"><button class="btn-text" id="btnRestart" type="button">처음부터 다시</button></div>
   ${footLineHTML()}
   `;
 }
