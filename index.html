@@ -1066,8 +1066,8 @@ function nurseBannerCopy(status){
     };
   }
   return {
-    title:'조건부 — 치료실 이송 가능',
-    desc:'세부 감염관리 조건은 치료실에서 적용합니다.',
+    title:'치료실 이송 가능',
+    desc:'세부 감염관리는 치료실에서 적용합니다.',
   };
 }
 
@@ -1085,7 +1085,7 @@ function doctorBannerCopy(status){
     };
   }
   return {
-    title:'조건부 치료실 처방 가능',
+    title:'치료실 처방 가능',
     desc:'파트별 제목과 실제 배정 가능 여부를 확인하세요.',
   };
 }
@@ -1125,7 +1125,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.53';
+const APP_VERSION = 'v1.55';
 
 function headerHTML(){
   return `
@@ -1436,6 +1436,7 @@ function buildConditions(diseases, role, decision){
   return {core, extras, title, intro, hint};
 }
 function conditionsCardHTML(diseases, role, decision){
+  if(role!=='therapy') return ''; // v1.55: 조건부 조건은 치료직 화면에서만
   const show = role==='doctor'
     ? (decision.status==='CONDITIONAL' || (decision.perPart||[]).some(x=>x.result.status==='CONDITIONAL'))
     : decision.status==='CONDITIONAL';
@@ -1475,7 +1476,7 @@ const NURSE_REASON = {
   scabies:'옴 접촉주의 격리기간 — 병실PT만(작업·연하·언어 불가)',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
-  vre:'VRE 접촉주의 — 치료실 조건부(병실 우선) · 타과 입원 환자는 병실PT만',
+  vre:'VRE 접촉주의 — 치료실 가능(병실 우선) · 타과 입원 환자는 병실PT만',
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 치료실 이송 가능',
   mrsa:'접촉주의',
   cdiff:'CDI 접촉주의(아포)',
@@ -1492,8 +1493,14 @@ function verdictTitleHTML(t){
   else if(i>-1){main=t.slice(0,i);sub=t.slice(i+3);}
   return `<span class="verdict-main">${main}</span>${sub?`<span class="verdict-sub">${sub}</span>`:''}`;
 }
+/* v1.54: 결과 카드 주의 유형은 아이콘만(라벨 중복 제거) */
+function precIconHTML(tag){
+  const IC={'접촉':'🧤','비말':'😷','공기':'🌬️','보호':'🛡️','표준':'🧼'};
+  const icons=[];Object.keys(IC).forEach(k=>{if(String(tag||'').indexOf(k)>-1)icons.push(IC[k]);});
+  return icons.length?`<span class="tag prec-icon" title="${tag}" aria-label="${tag}">${icons.join(' ')}</span>`:'';
+}
 const NURSE_VERDICT = {
-  CONDITIONAL:{title:'조건부 — 치료실 이송 가능', cls:'banner-conditional'},
+  CONDITIONAL:{title:'치료실 이송 가능', cls:'banner-conditional'},
   WARD_ONLY:{title:'병실PT만 — 치료실 이송 · 작업·연하·언어 불가', cls:'banner-ward'},
   HOLD:{title:'보류 — 확인 전 이송·치료 보류', cls:'banner-hold'},
 };
@@ -1520,9 +1527,8 @@ function nurseScenarioHTML(decision, ids){
   const wardNote = !wardOk ? '확인 전 보류'
     : s==='WARD_ONLY' ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
   return `<div class="card"><div class="section-title"><span class="ico">2</span>어디서 치료하나</div>
-    <div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomOk?'pill-conditional':'pill-hold'}">${roomOk?'이송 가능(조건부)':'불가'}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>
+    <div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomOk?'pill-conditional':'pill-hold'}">${roomOk?'이송 가능':'불가'}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>
     <div class="scenario ${wardOk?'':'scenario-off'}"><div class="sc-head">🛏 병실PT <span class="status-pill ${wardOk?'pill-ward':'pill-hold'}">${wardOk?(s==='WARD_ONLY'?'가능':'대안'):'보류'}</span></div><p class="hint" style="margin:0;">${wardNote}</p></div>
-    ${roomOk?(()=>{const o=!!state.expandedTreat.nurseCond;return `<div class="accordion-item ${o?'open':''}" style="margin-top:8px;"><div class="accordion-header" data-accordion="nurseCond" role="button" tabindex="0" aria-expanded="${o}"><span>치료실에서 적용하는 조건</span><span class="chev">▾</span></div><div class="accordion-body"><ul class="list">${nurseCondLines(ids).map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;})():''}
   </div>`;
 }
 
@@ -1530,10 +1536,10 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const ids = diseases.map(d=>d.id);
   let v = NURSE_VERDICT[decision.status] || NURSE_VERDICT.HOLD;
   const symCond = decision.status==='CONDITIONAL' && diseases.some(d=>d.base==='CONDITIONAL_SYMPTOM');
-  if(symCond) v = {title:'증상 확인 — 확인 후 이송 결정', cls:'banner-symptom'};
-  const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'조건부', CONDITIONAL_SYMPTOM:'증상 확인'};
+  /* v1.55: 독감도 「치료실 이송 가능」 + 증상 한 줄 */
+  const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'치료실 가능', CONDITIONAL_SYMPTOM:'증상 확인'};
   const reasonList = diseases.map(d=>`<li>${NURSE_REASON[d.id]||d.label}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
-  const branch = symCond ? `<div class="desc" style="margin-top:6px;">• 발열·기침 등 증상 심함 → <b>보류</b><br>• 증상 호전 + 마스크 유지 가능 → <b>치료실 조건부</b>(담당의·감염관리 확인 후)</div>` : '';
+  const branch = symCond ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
   const maskOff = (decision.status==='CONDITIONAL' && ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) ? `<div class="desc" style="margin-top:6px;">ℹ 연하·호흡치료도 치료실 가능(마스크를 벗는 과제는 치료실에서 독립 공간으로 진행)</div>` : '';
   const open = !!state.expandedTreat.nurseFull;
   const nurseCdiffNote = cdiffBanner ? `<div class="info-note"><b>ℹ C. difficile</b> 아포 형성 — 알코올 손소독만으로는 제거되지 않습니다(물·비누 손위생).</div>` : '';
@@ -1543,7 +1549,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
       <div class="title">${verdictTitleHTML(v.title)}</div>
       <ul class="desc" style="margin:4px 0 0 18px;padding:0;">${reasonList}</ul>
       ${branch}${maskOff}
-      <div class="tag-row"><span class="tag">${decision.ppeTag}</span></div>
+      <div class="tag-row">${precIconHTML(decision.ppeTag)}</div>
     </div>
 
     ${nurseScenarioHTML(decision, ids)}
@@ -1595,7 +1601,8 @@ function renderResult(){
   if(decision.role==='doctor'){
     const meta = STATUS_META[decision.status];
     const banner = doctorBannerCopy(decision.status);
-    const PLACE = {CONDITIONAL:'치료실 처방 가능(조건부)', WARD_ONLY:'병실PT 처방', HOLD:'처방 보류'};
+    const PLACE = {CONDITIONAL:'치료실 처방 가능', WARD_ONLY:'병실PT 처방', HOLD:'처방 보류'};
+    const docSym = diseases.some(d=>d.base==='CONDITIONAL_SYMPTOM');
     const short = p=>p.label.split('(')[0].trim()==='연하치료'?'연하치료':p.label.split('(')[0].trim();
     const grid = decision.perPart.map(({part,result})=>{
       const pill = STATUS_PILL[result.status] || STATUS_PILL.HOLD;
@@ -1603,13 +1610,13 @@ function renderResult(){
     }).join('');
     const reasons = decision.perPart.map(({part,result})=>`
       <div class="part-status-row">
-        ${statusPillHTML(result.status)}
-        <div class="txt"><b>${short(part)}</b><small>${result.title}</small></div>
+        ${result.status==='CONDITIONAL'?'<span class="status-pill pill-conditional">치료실 가능</span>':statusPillHTML(result.status)}
+        <div class="txt"><b>${short(part)}</b><small>${result.status==='CONDITIONAL'?(docSym?'치료실 처방 가능 (증상 확인)':'치료실 처방 가능'):result.title}</small></div>
       </div>`).join('');
     const groups = {CONDITIONAL:[],WARD_ONLY:[],HOLD:[]};
     decision.perPart.forEach(({part,result})=>{ (groups[result.status]||groups.HOLD).push(short(part)); });
     const memoBits = [];
-    if(groups.CONDITIONAL.length) memoBits.push(`${groups.CONDITIONAL.join('·')} 치료실 조건부`);
+    if(groups.CONDITIONAL.length) memoBits.push(`${groups.CONDITIONAL.join('·')} 치료실`);
     if(groups.WARD_ONLY.length) memoBits.push(`${groups.WARD_ONLY.join('·')} 병실PT`);
     if(groups.HOLD.length) memoBits.push(`${groups.HOLD.join('·')} 보류`);
     const memo = `[감염] ${diseaseLabel} (${decision.ppeTag}) — ${memoBits.join(', ')}. EMR Alert·격리상태 확인 후 진행 부탁드립니다.`;
@@ -1630,6 +1637,7 @@ function renderResult(){
     <div class="card">
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
       <div class="part-status-list">${reasons}</div>
+      ${docSym?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
       <p class="hint">${banner.desc}</p>
     </div>
 
@@ -1676,7 +1684,7 @@ function renderResult(){
       <div class="title">${verdictTitleHTML(decision.title)}</div>
       <div class="desc">${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인. 세부 기준은 아래 「결핵 해제·재개 기준」 참고.' : decision.desc}</div>
       <div class="tag-row">
-        <span class="tag">${decision.ppeTag}</span>
+        ${precIconHTML(decision.ppeTag)}
       </div>
     </div>
 
