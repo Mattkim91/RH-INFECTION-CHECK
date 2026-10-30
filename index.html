@@ -988,23 +988,40 @@ function decideForPart(diseases, part){
   let worst = perDisease[0];
   for(const r of perDisease){
     if(STATUS_PRIORITY[r.status] > STATUS_PRIORITY[worst.status]) worst = r;
+    /* v1.73: 동급이면 VRE(행정 구분) 대신 실제 제한 질환을 제목에 */
+    else if(r.status===worst.status && worst.disease.id==='vre' && r.disease.id!=='vre') worst = r;
   }
-  const worstDiseases = perDisease.filter(r=>r.status===worst.status).map(r=>r.disease.label);
+  const sn = d=>d.short||d.label;
+  const worstRs = perDisease.filter(r=>r.status===worst.status);
+  const worstDiseases = worstRs.map(r=>sn(r.disease));
+  const vreOtherHold = worst.status==='HOLD' && state.admit==='other' && worstRs.some(r=>r.disease.id==='vre');
+  const coHold = vreOtherHold && worstRs.some(r=>r.disease.id!=='vre');
 
   const multi = diseases.length > 1;
 
   // 치료 장소: 모든 질환의 안내를 중복 제거하여 통합
   const locSet = [];
+  const COMMON = '이동 전 오염된 보호구는 제거하고 손위생을 시행하며, 치료 장소에서 직접 접촉이 필요한 경우 청결한 보호구를 새로 착용합니다.';
+  let hasCommon = false;
   perDisease.forEach(r=>{
-    r.location.forEach(line=>{ if(!locSet.includes(line)) locSet.push(line); });
+    r.location.forEach(line=>{
+      /* v1.73: 공통 보호구 문장은 한 번만 */
+      if(line.includes(COMMON)){ hasCommon = true; line = line.replace(COMMON,'').trim(); if(!line) return; }
+      /* v1.73: 타과 VRE + 다른 보류 질환 → 「보류 아님」 표현 제거 */
+      if(coHold && line.indexOf('격리해제 대기 보류 아님')>-1) line = '타과 입원 VRE는 이 파트에서 미시행입니다.';
+      if(!locSet.includes(line)) locSet.push(line);
+    });
   });
+  if(hasCommon) locSet.push(COMMON);
   if(multi){
-    locSet.unshift(`선택한 질환(${diseases.map(d=>d.label).join(', ')}) 중 가장 제한적인 기준(${worstDiseases.join(', ')})을 전체 치료 기준으로 적용합니다.`);
+    locSet.unshift(`선택한 질환(${diseases.map(sn).join(', ')}) 중 가장 제한적인 기준(${worstDiseases.join(', ')})을 전체 치료 기준으로 적용합니다.`);
   }
+  let title = worst.title;
+  if(coHold) title = `치료 미시행 (${worstRs.map(r=>r.disease.id==='vre'?'VRE 타과 입원':sn(r.disease)).join(' · ')})`;
 
   return {
     status: worst.status,
-    title: worst.title,
+    title,
     desc: worst.desc,
     location: locSet,
   };
@@ -1176,7 +1193,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.72';
+const APP_VERSION = 'v1.73';
 
 function headerHTML(){
   return `
@@ -1707,7 +1724,9 @@ function renderResult(){
 
   if(decision.role==='doctor'){
     const meta = STATUS_META[decision.status];
-    const PLACE = {CONDITIONAL:'치료실 처방 가능', WARD_ONLY:'병실PT 처방', HOLD:'처방 보류'};
+    const vreOtherDoc = diseases.some(d=>d.id==='vre') && state.admit==='other';
+    /* v1.73: 타과 VRE면 파트 라벨도 「미시행」으로 통일 */
+    const PLACE = {CONDITIONAL:'치료실 처방 가능', WARD_ONLY:'병실PT 처방', HOLD:vreOtherDoc?'미시행':'처방 보류'};
     const docSym = diseases.some(d=>d.base==='CONDITIONAL_SYMPTOM');
     const short = p=>p.label.split('(')[0].trim()==='연하치료'?'연하치료':p.label.split('(')[0].trim();
     const grid = decision.perPart.map(({part,result})=>{
@@ -1725,7 +1744,6 @@ function renderResult(){
     const wardHoldMix = groups.WARD_ONLY.length>0 && groups.HOLD.length>0 && groups.CONDITIONAL.length===0;
     let banner = doctorBannerCopy(decision.status);
     let bannerCls = meta.cls;
-    const vreOtherDoc = diseases.some(d=>d.id==='vre') && state.admit==='other';
     if(wardHoldMix && vreOtherDoc){
       banner = {
         title:'병실PT만 처방 가능 · 작업·연하·언어 미시행(타과 입원 VRE)',
@@ -1763,7 +1781,7 @@ function renderResult(){
     <div class="card">
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
       <div class="part-status-list">${reasons}</div>
-      ${docSym?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
+      ${(docSym && decision.status==='CONDITIONAL')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
       ${showVreTip?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ RH 입원 · 치료실 가능(PT 111 우선 · 운동치료실 문의·컨펌)</div>':''}
       <p class="hint">${banner.desc}</p>
     </div>
@@ -1832,7 +1850,7 @@ function renderResult(){
       </ul>
     </div>
 
-    <div class="card">
+    ${decision.status==='HOLD' ? '' : `<div class="card">
       <div class="section-title"><span class="ico">3</span>장비 사용</div>
       <p class="hint">항목을 눌러 세부 소독·관리 지침을 확인하세요.</p>
       ${treatAccordion}
@@ -1848,7 +1866,7 @@ function renderResult(){
         <li>다음 환자 전 소독시간 확보가 어려운 경우, 가능하면 하루 중 마지막 시간대에 배정하거나(마지막 시간이 어려우면 최대한 마지막에 가깝게 배정) 치료 간격 확보, 장비 최소화, 전용물품 사용, 병실치료 전환 중 적용 가능한 방법을 고려한다.</li>
         <li>Alert 불일치, 장소·시간·장비 조정 등 특이사항은 치료실 내에 공유한다.</li>
       </ul>
-    </div>
+    </div>`}
     `;
   }
 
