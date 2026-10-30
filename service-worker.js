@@ -1,8 +1,12 @@
-const CACHE_NAME = 'rehab-infection-check-v3.5';
+const CACHE_NAME = 'rehab-infection-check-v1.23';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './favicon.ico',
+  './icons/icon-16.png',
+  './icons/icon-32.png',
+  './icons/icon-48.png',
   './icons/icon-72.png',
   './icons/icon-96.png',
   './icons/icon-120.png',
@@ -18,7 +22,7 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => Promise.all(ASSETS.map((a) => cache.add(a).catch(() => {}))))
   );
   self.skipWaiting();
 });

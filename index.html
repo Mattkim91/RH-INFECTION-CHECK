@@ -173,6 +173,7 @@
     gap:8px;
   }
   .chip{
+    font-family:inherit;width:100%;
     border:1.5px solid var(--line);
     background:#fff;
     border-radius:12px;
@@ -661,6 +662,12 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disease-search input::placeholder{color:#9aa4ad;}
 .disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
 .disease-search button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;cursor:pointer;}
+.sel-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 4px;}
+.sel-strip-lab{font-size:13.5px;font-weight:700;color:var(--navy);}
+.sel-pill{font-family:inherit;font-size:13.5px;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
+.nav-hint{text-align:center;font-size:12.5px;color:#6b7680;margin:4px 12px 0;}
+.offline-badge{margin-left:6px;background:#8a949c;color:#fff;border-radius:999px;padding:1px 8px;font-size:12px;}
+.radio-row:focus-visible,.chip:focus-visible,.accordion-header:focus-visible,.sel-pill:focus-visible{outline:3px solid var(--teal);outline-offset:2px;}
 .disease-empty{color:#8a949c;font-size:14px;text-align:center;padding:12px 0;margin:0;}
 </style>
 </head>
@@ -752,6 +759,7 @@ const PRECAUTION_PPE = {
   contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['격리실 출입 시 장갑 반드시 착용, 팔이 노출되지 않게 일회용 가운 반드시 착용 → 나오기 전 탈의·격리의료폐기물 용기에 폐기 후 손위생','현재 격리상태와 다제내성균 지침 확인','체온계·청진기·혈압계·tourniquet 등 개별물품 또는 일회용 사용','환자·환자 주변환경 접촉 후 손위생(물·비누 40~60초 / 알코올 손소독제 20~30초; 눈에 띄는 오염 시 물·비누; 장갑은 손위생 대체 불가)']},
   contact_cdiff:{tag:'접촉주의(아포 형성균)', ppe:['직원: 장갑·긴팔 가운 착용','체온계 등 개별 사용','손위생은 가급적 물과 비누로 시행 (알코올 손소독제는 아포에 효과 없음; 장갑은 손위생을 대체하지 않음)','접촉 표면·사용장비는 1:10 락스 희석액 또는 바이오스팟, 티슈형(엔지셉트플러스와입스) 등 아포에 유효한 소독제로 소독']},
   droplet:{tag:'비말주의', ppe:['환자·직원 모두 일반 마스크 착용','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
+  // droplet_contact·droplet_air: 현재 질환에 미사용이나 그룹순서·companionNote에서 참조 → 안전장치로 유지
   droplet_contact:{tag:'비말·접촉주의', ppe:['일반 마스크 착용','장갑·긴팔 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
   droplet_air:{tag:'비말·공기', ppe:['최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
   airborne:{tag:'공기주의', ppe:['직원 N95(동급) 마스크 — 착용 시 Fit check(양손으로 감싸고 숨 불어 누설 확인), 탈의는 병실 밖으로 나와 문을 닫은 후','환자는 일반 마스크 착용','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
@@ -1070,7 +1078,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.22';
+const APP_VERSION = 'v1.23';
 
 function headerHTML(){
   return `
@@ -1098,26 +1106,37 @@ function renderWizard(){
     ${body}
   </main>
   <footer class="nav">
-    ${state.step>1 ? `<button class="btn ghost" id="btnBack">이전</button>` : ''}
+    ${state.step>1 ? `<button class="btn ghost" id="btnBack" type="button">이전</button>` : ''}
     <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>
       ${state.step<2 ? '다음' : '결과 확인'}
     </button>
   </footer>
+  ${footLineHTML()}
   `;
 }
 
+function footLineHTML(){
+  return `<div class="app-badge">지침 기준: 재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) · 참고용 · 최종판단은 담당의/감염관리팀<span class="offline-badge" id="offlineBadge" style="display:${(typeof navigator!=='undefined' && navigator.onLine===false)?'inline-block':'none'}">오프라인 · 마지막 앱 ${APP_VERSION}</span></div>`;
+}
+function updateOfflineBadge(){
+  const b = document.getElementById('offlineBadge');
+  if(b) setDisp(b, navigator.onLine===false ? 'inline-block' : 'none');
+}
+window.addEventListener('online', updateOfflineBadge);
+window.addEventListener('offline', updateOfflineBadge);
+
 function step1HTML(){
   const partChips = PARTS.map(p=>`
-    <div class="chip ${state.part===p.id?'sel':''}" data-part="${p.id}">${p.label}</div>
+    <button type="button" class="chip ${state.part===p.id?'sel':''}" data-part="${p.id}" aria-pressed="${state.part===p.id}">${p.label}</button>
   `).join('');
 
   const staffChips = STAFF_ROLES.map(r=>`
-    <div class="chip ${state.part===r.id?'sel':''}" data-part="${r.id}">${r.label}</div>
+    <button type="button" class="chip ${state.part===r.id?'sel':''}" data-part="${r.id}" aria-pressed="${state.part===r.id}">${r.label}</button>
   `).join('');
 
   return `
   <div class="card">
-    <h2>치료직</h2>
+    <h2>치료실</h2>
     <p class="hint">병실방문치료 프로그램은 물리치료(PT)에만 운영됩니다. 작업치료·연하치료·언어치료는 치료실 내원이 허용된 경우에 한해 독립된 공간에서 시행합니다.</p>
     <div class="chip-grid">${partChips}</div>
   </div>
@@ -1141,13 +1160,15 @@ function diseaseSearchKey(d){ return normSearch([d.id,d.label].concat(d.aliases|
 function setDisp(el,v){ if(el && el.style) el.style.display=v; }
 function isVis(el){ return !(el && el.style && el.style.display==='none'); }
 function filterDiseaseRows(){
-  const q = normSearch(state.diseaseQuery);
-  const terms = q ? q.split('|') : [];
+  const toks = String(state.diseaseQuery||'').split(/[\s,，]+/).map(normSearch).filter(Boolean);
+  const q = toks.length>0;
   Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{
-    const key = (el.dataset||{}).search||'';
-    const parts = key.split('|');
-    setDisp(el, (!q || parts.some(p=>p.includes(q))) ? '' : 'none');
+    const ds = el.dataset||{};
+    const parts = (ds.search||'').split('|');
+    const show = !q || state.diseases.includes(ds.disease) || toks.some(t=>parts.some(p=>p.includes(t)));
+    setDisp(el, show ? '' : 'none');
   });
+  renderSelStrip();
   Array.from(appEl.querySelectorAll('.radio-list')||[]).forEach(list=>{
     if(!list.querySelector('.radio-row[data-disease]')) return;
     const vis = Array.from(list.querySelectorAll('.radio-row[data-disease]')||[]).some(r=>isVis(r));
@@ -1165,6 +1186,34 @@ function filterDiseaseRows(){
   if(clr){ clr.textContent = state.diseaseQuery ? '✕' : '🔍'; if(clr.setAttribute) clr.setAttribute('aria-label', state.diseaseQuery ? '검색어 지우기' : '검색'); }
 }
 
+function renderSelStrip(){
+  const el = document.getElementById('selStrip');
+  if(!el) return;
+  if(!state.diseases.length){ el.innerHTML=''; setDisp(el,'none'); return; }
+  setDisp(el,'');
+  el.innerHTML = '<span class="sel-strip-lab">선택됨:</span>' + state.diseases.map(id=>{
+    const d = DISEASES.find(x=>x.id===id); const lab = d ? d.label : id;
+    return `<button type="button" class="sel-pill" data-unsel="${id}" aria-label="${lab} 선택 해제">${lab} ✕</button>`;
+  }).join('');
+  Array.from(el.querySelectorAll('[data-unsel]')||[]).forEach(b=>{ b.onclick=()=>toggleDisease(b.dataset.unsel); });
+}
+function syncDiseaseRow(id){
+  const on = state.diseases.includes(id);
+  Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{
+    if((el.dataset||{}).disease!==id) return;
+    el.classList.toggle('sel', on);
+    if(el.setAttribute) el.setAttribute('aria-checked', String(on));
+  });
+  const next = document.getElementById('btnNext');
+  if(next) next.disabled = state.diseases.length===0;
+}
+function toggleDisease(id, forceOn){
+  const i = state.diseases.indexOf(id);
+  if(i===-1) state.diseases.push(id); else if(!forceOn) state.diseases.splice(i,1);
+  syncDiseaseRow(id);
+  filterDiseaseRows();
+}
+
 function step2HTML(){
   // 일반(비특별) 질환: 지정된 순서대로 그룹 렌더링. 목록에 없는 새 전파경로가
   // 추가되더라도(앞으로 질환이 늘어날 경우에 대한 안전장치) 아래에서 누락 없이 모두 표시한다.
@@ -1174,7 +1223,7 @@ function step2HTML(){
     coveredKeys.push(key);
     if(list.length===0) return '';
     const rows = list.map(d=>`
-      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
+      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
         <div class="box"></div>
         <div class="txt">${d.label}</div>
       </div>
@@ -1187,7 +1236,7 @@ function step2HTML(){
     const leftover = DISEASES.filter(d=>!d.special && !coveredKeys.includes(d.precaution));
     if(leftover.length===0) return '';
     const rows = leftover.map(d=>`
-      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
+      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
         <div class="box"></div>
         <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
       </div>
@@ -1197,7 +1246,7 @@ function step2HTML(){
 
   const specialList = DISEASES.filter(d=>d.special);
   const specialRows = specialList.map(d=>`
-    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
+    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
       <div class="box"></div>
       <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
     </div>
@@ -1210,9 +1259,10 @@ function step2HTML(){
       <input type="search" id="diseaseSearch" placeholder="예: MRSA, VRE, 결핵" autocomplete="off" aria-label="질환 검색">
       <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
     </div>
+    <div class="sel-strip" id="selStrip" style="display:none"></div>
     <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
     ${groupsHTML}
-    <p class="disease-empty" id="diseaseEmpty" style="display:none">일치하는 질환이 없습니다.</p>
+    <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
   </div>
 
   <div class="card" id="specialCard">
@@ -1225,16 +1275,18 @@ function step2HTML(){
 
 function bindWizardEvents(){
   appEl.querySelectorAll('[data-part]').forEach(el=>{
-    el.onclick=()=>{state.part=el.dataset.part; render();};
+    el.onclick=()=>{state.part=el.dataset.part; render(); const b=appEl.querySelector('[data-part="'+state.part+'"]'); if(b&&b.focus) b.focus();};
   });
   appEl.querySelectorAll('[data-disease]').forEach(el=>{
-    el.onclick=()=>{
-      const id = el.dataset.disease;
-      const i = state.diseases.indexOf(id);
-      if(i===-1) state.diseases.push(id); else state.diseases.splice(i,1);
-      render();
-    };
+    el.onclick=()=>toggleDisease(el.dataset.disease);
+    el.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); toggleDisease(el.dataset.disease); } };
   });
+  const po = document.getElementById('btnPickOther');
+  if(po) po.onclick=()=>{
+    state.diseaseQuery='';
+    const inp=document.getElementById('diseaseSearch'); if(inp) inp.value='';
+    toggleDisease('other', true);
+  };
   const ds = document.getElementById('diseaseSearch');
   if(ds){
     ds.value = state.diseaseQuery;
@@ -1244,11 +1296,11 @@ function bindWizardEvents(){
     filterDiseaseRows();
   }
   const back = document.getElementById('btnBack');
-  if(back) back.onclick=()=>{state.step--; render(); window.scrollTo(0,0);};
+  if(back) back.onclick=()=>goBack();
   const next = document.getElementById('btnNext');
   if(next) next.onclick=()=>{
     if(next.disabled) return;
-    state.step++; render(); window.scrollTo(0,0);
+    goStep(state.step+1);
   };
 }
 
@@ -1315,7 +1367,7 @@ function conditionsCardHTML(diseases, role, decision){
   return `
   <div class="card">
     <div class="accordion-item ${open?'open':''}">
-      <div class="accordion-header" data-accordion="conditions">
+      <div class="accordion-header" data-accordion="conditions" role="button" tabindex="0" aria-expanded="${!!state.expandedTreat['conditions']}">
         <span>✓ ${c.title}</span>
         <span class="chev">▾</span>
       </div>
@@ -1466,7 +1518,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
 
     <div class="card">
       <div class="accordion-item ${open?'open':''}">
-        <div class="accordion-header" data-accordion="nurseFull"><span>지침서 공식 점검 항목 전체 (질환 무관)</span><span class="chev">▾</span></div>
+        <div class="accordion-header" data-accordion="nurseFull" role="button" tabindex="0" aria-expanded="${!!state.expandedTreat['nurseFull']}"><span>지침서 공식 점검 항목 전체 (질환 무관)</span><span class="chev">▾</span></div>
         <div class="accordion-body"><ul class="list">${decision.checklist.map(c=>`<li>${c}</li>`).join('')}</ul></div>
       </div>
     </div>`;
@@ -1476,13 +1528,21 @@ function renderResult(){
   const decision = decide();
   const diseases = decision.diseases;
 
+  const tbOpen = !!state.expandedTreat.tbCriteria;
   const tbBanner = state.diseases.includes('tb') ? `
     <div class="tb-warning">
-      <b>⚠ 활동성/의심 결핵 — 별도 강조 (간호사·물리치료사·의사 공통)</b>
-      <b>공기주의 대상:</b> 폐·후두 결핵(확진·의심), 배액 병변이 있는 폐외결핵(공기+접촉). <b>배액 없는 폐외결핵:</b> 표준주의 — 공기주의 병실치료 제한과 다르며, 활동성 폐결핵 동반 여부를 먼저 확인합니다.<br>
-      격리 중 보호구: 직원 N95(동급) 착용 + Fit check, 병실 밖에서 탈의 / 환자 일반 마스크. 간호사는 격리 표지·BESTCare 격리 표시 확인.<br>
-      <b>해제·전환:</b> 내부 기준(항결핵제 2주 이상 + 전염성 감소) 및 해제기준(효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성 / 의심은 다른 진단 또는 AFB smear 3회 음성, 8~24시간 간격·1회 이상 이른 아침)을 함께 확인합니다.<br>
-      <b>판정: 재활치료 미시행(보류)</b> — 활동성/의심 결핵은 치료실·병실 어떤 형태로든 재활치료를 시행하지 않습니다. 항결핵제 2주 이상·전염성 감소만으로 임의 재개하지 않으며, 담당의 또는 감염관리팀 확인 후 재개 여부를 재평가합니다. 위 보호구는 다른 사유로 병실에 들어가는 직원용입니다.
+      <b>⚠ 활동성/의심 결핵 — 재활치료 미시행(보류)</b>
+      치료실·병실 모두 시행하지 않으며, 재개는 <b>담당의·감염관리팀 확인</b> 후 재평가합니다.
+    </div>
+    <div class="card">
+      <div class="accordion-item ${tbOpen?'open':''}">
+        <div class="accordion-header" data-accordion="tbCriteria" role="button" tabindex="0" aria-expanded="${tbOpen}"><span>결핵 해제·재개 기준</span><span class="chev">▾</span></div>
+        <div class="accordion-body">
+          <b>공기주의 대상:</b> 폐·후두 결핵(확진·의심), 배액 병변이 있는 폐외결핵(공기+접촉). <b>배액 없는 폐외결핵:</b> 표준주의 — 공기주의 병실치료 제한과 다르며, 활동성 폐결핵 동반 여부를 먼저 확인합니다.<br>
+          격리 중 보호구: 직원 N95(동급) 착용 + Fit check, 병실 밖에서 탈의 / 환자 일반 마스크. 간호사는 격리 표지·BESTCare 격리 표시 확인. 이 보호구는 다른 사유로 병실에 들어가는 직원용입니다.<br>
+          <b>해제·전환:</b> 내부 기준(항결핵제 2주 이상 + 전염성 감소) 및 해제기준(효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성 / 의심은 다른 진단 또는 AFB smear 3회 음성, 8~24시간 간격·1회 이상 이른 아침)을 함께 확인합니다. 항결핵제 2주 이상·전염성 감소만으로 임의 재개하지 않습니다.
+        </div>
+      </div>
     </div>` : '';
 
   const cdiffBanner = state.diseases.includes('cdiff') ? `
@@ -1546,7 +1606,7 @@ function renderResult(){
 
     <div class="card">
       <div class="accordion-item ${ppeOpen?'open':''}">
-        <div class="accordion-header" data-accordion="docPpe">
+        <div class="accordion-header" data-accordion="docPpe" role="button" tabindex="0" aria-expanded="${!!state.expandedTreat['docPpe']}">
           <span>보호구·환경 (참고)</span>
           <span class="chev">▾</span>
         </div>
@@ -1566,7 +1626,7 @@ function renderResult(){
       const open = !!state.expandedTreat[t.id];
       return `
       <div class="accordion-item ${open?'open':''}">
-        <div class="accordion-header" data-accordion="${t.id}">
+        <div class="accordion-header" data-accordion="${t.id}" role="button" tabindex="0" aria-expanded="${!!state.expandedTreat[t.id]}">
           <span>${t.label}</span>
           <span class="chev">▾</span>
         </div>
@@ -1578,7 +1638,7 @@ function renderResult(){
     <div class="result-banner ${meta.cls}">
       <div class="kicker">${meta.kicker} · ${diseaseLabel} · ${decision.part.label}</div>
       <div class="title">${decision.title}</div>
-      <div class="desc">${decision.desc}</div>
+      <div class="desc">${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인. 세부 기준은 아래 「결핵 해제·재개 기준」 참고.' : decision.desc}</div>
       <div class="tag-row">
         <span class="tag">${decision.ppeTag}</span>
       </div>
@@ -1633,40 +1693,93 @@ function renderResult(){
       <b>본 도구는 병원 감염관리 지침을 대체하지 않으며</b>, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
     </div>
   </main>
+  <div class="nav-hint">이전 = 질환 선택으로 · 선택은 유지 / 처음부터 다시 = 전체 초기화</div>
   <footer class="nav">
-    <button class="btn ghost" id="btnPrev">이전</button>
-    <button class="btn primary restart" id="btnRestart">처음부터 다시</button>
+    <button class="btn ghost" id="btnPrev" type="button">이전</button>
+    <button class="btn primary restart" id="btnRestart" type="button">처음부터 다시</button>
   </footer>
-  <div class="app-badge">재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) 기반 · 내부 참고용</div>
+  ${footLineHTML()}
   `;
 }
 
+function legacyCopy(t){
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    if(ta.setSelectionRange) ta.setSelectionRange(0, t.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return !!ok;
+  }catch(e){ return false; }
+}
+function bindCopy(btnId, textId, label){
+  const b = document.getElementById(btnId);
+  if(!b) return;
+  b.onclick = ()=>{
+    const t = (document.getElementById(textId)||{}).innerText||'';
+    const show = (msg,ms)=>{ b.textContent=msg; setTimeout(()=>{b.textContent=label;},ms); };
+    const fallback = ()=>{ if(legacyCopy(t)) show('✓ 복사됨',1500); else show('복사 실패 — 길게 눌러 복사',3000); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>show('✓ 복사됨',1500)).catch(fallback);
+    else fallback();
+  };
+}
+/* v1.23 뒤로가기(스와이프·시스템 back) 트랩 — 화면 단계와 history 동기화 */
+function histPush(step){ try{ history.pushState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
+function histReplace(step){ try{ history.replaceState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
+function goStep(n){ state.step=n; histPush(n); render(); window.scrollTo(0,0); }
+// 화면 '이전' = 시스템 뒤로가기와 동일 → popstate가 화면을 갱신 (스택 일치)
+function goBack(){
+  if(state.step<=1) return;
+  if(history.state && history.state.qcStep===state.step && state.step>1){ history.back(); }
+  else { state.step--; histReplace(state.step); render(); window.scrollTo(0,0); }
+}
+function restartAll(){
+  const depth = state.step-1;
+  resetState();
+  if(depth>0 && history.state && history.state.qcStep>1){ ignorePops = 1; history.go(-depth); }
+  else histReplace(1);
+}
+let ignorePops = 0, exiting = false;
+window.addEventListener('popstate', (e)=>{
+  if(exiting) return;
+  if(ignorePops>0){ ignorePops--; return; }
+  const target = e.state && e.state.qcStep;
+  if(target && target>=1 && target<state.step){
+    state.step = target; render(); window.scrollTo(0,0); return;
+  }
+  if(state.step>1){ state.step = Math.max(1, target||state.step-1); histReplace(state.step); render(); window.scrollTo(0,0); return; }
+  // 첫 화면에서 뒤로 → 종료 확인 (트랩 아래로 내려온 상태)
+  if(confirm('앱을 종료할까요?')){ exiting = true; history.back(); }
+  else { histPush(1); }
+});
+
 function bindResultEvents(){
-  document.getElementById('btnRestart').onclick = resetState;
-  const cp = document.getElementById('btnCopyHandoff');
-  if(cp) cp.onclick = ()=>{
-    const t = (document.getElementById('handoffText')||{}).innerText||'';
-    const done = ()=>{ cp.textContent='✓ 복사됨'; setTimeout(()=>{cp.textContent='📋 인계 문구 복사';},1500); };
-    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>{});
-  };
-  const cd = document.getElementById('btnCopyDoctorMemo');
-  if(cd) cd.onclick = ()=>{
-    const t = (document.getElementById('doctorMemoText')||{}).innerText||'';
-    const done = ()=>{ cd.textContent='✓ 복사됨'; setTimeout(()=>{cd.textContent='📋 처방 메모 복사';},1500); };
-    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>{});
-  };
-  document.getElementById('btnPrev').onclick = ()=>{ state.step=2; render(); window.scrollTo(0,0); };
+  document.getElementById('btnRestart').onclick = ()=>restartAll();
+  bindCopy('btnCopyHandoff','handoffText','📋 인계 문구 복사');
+  bindCopy('btnCopyDoctorMemo','doctorMemoText','📋 처방 메모 복사');
+  document.getElementById('btnPrev').onclick = ()=>goBack();
   appEl.querySelectorAll('[data-accordion]').forEach(el=>{
     el.onclick=()=>{
       const id = el.dataset.accordion;
       state.expandedTreat[id] = !state.expandedTreat[id];
       const item = el.closest('.accordion-item');
       if(item) item.classList.toggle('open', !!state.expandedTreat[id]);
+      if(el.setAttribute) el.setAttribute('aria-expanded', String(!!state.expandedTreat[id]));
     };
+    el.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); el.onclick(); } };
   });
 }
 
 render();
+// 첫 로드: 기준 엔트리(#0) 위에 #1 트랩을 쌓아 첫 화면 back을 잡음
+try{
+  if(!(history.state && history.state.qcStep)){
+    history.replaceState({qcBase:1}, '', location.pathname + location.search);
+    history.pushState({qcStep:1}, '', location.pathname + location.search + '#1');
+  }else if(history.state.qcStep!==1){ histReplace(1); }
+}catch(e){}
 
 /* =========================================================
    PWA: 서비스워커 등록 + 홈 화면에 추가 안내
@@ -1699,7 +1812,7 @@ if('serviceWorker' in navigator){
     document.body.appendChild(banner);
     banner.querySelector('.install-banner-close').onclick = ()=>{
       banner.remove(); banner = null;
-      try{ sessionStorage.setItem('installBannerDismissed','1'); }catch(e){}
+      try{ localStorage.setItem('installBannerSnoozeAt', String(Date.now())); }catch(e){}
     };
     if(onClick){
       banner.addEventListener('click', (e)=>{
@@ -1710,7 +1823,7 @@ if('serviceWorker' in navigator){
   }
 
   let dismissed = false;
-  try{ dismissed = sessionStorage.getItem('installBannerDismissed')==='1'; }catch(e){}
+  try{ const t = Number(localStorage.getItem('installBannerSnoozeAt')||0); dismissed = t>0 && (Date.now()-t) < 7*24*60*60*1000; }catch(e){}
   if(dismissed) return;
 
   window.addEventListener('beforeinstallprompt', (e)=>{
