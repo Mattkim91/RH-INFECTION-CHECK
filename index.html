@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.69';
+const APP_VERSION = 'v1.70';
 
 function headerHTML(){
   return `
@@ -1866,12 +1866,14 @@ function renderResult(){
 /* v1.23 뒤로가기(스와이프·시스템 back) 트랩 — 화면 단계와 history 동기화 */
 function histPush(step){ try{ history.pushState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
 function histReplace(step){ try{ history.replaceState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
-function goStep(n){ if(n===3 && state.diseases.includes('vre') && !state.admit){ showAdmitModal(); return; } const _am=document.getElementById('admitModal'); if(_am) _am.remove(); state.step=n; histPush(n); render(); window.scrollTo(0,0); }
+function resetDiseaseSel(){ state.diseases=[]; state.admit=null; state.diseaseQuery=''; state.expandedTreat={}; }
+function leaveTo(n){ if(n===1 && state.step>=2) resetDiseaseSel(); }
+function goStep(n){ if(n===3 && state.diseases.includes('vre') && !state.admit){ showAdmitModal(); return; } const _am=document.getElementById('admitModal'); if(_am) _am.remove(); leaveTo(n); state.step=n; histPush(n); render(); window.scrollTo(0,0); }
 // 화면 '이전' = 시스템 뒤로가기와 동일 → popstate가 화면을 갱신 (스택 일치)
 function goBack(){
   if(state.step<=1) return;
   if(history.state && history.state.qcStep===state.step && state.step>1){ history.back(); }
-  else { state.step--; histReplace(state.step); render(); window.scrollTo(0,0); }
+  else { leaveTo(state.step-1); state.step--; histReplace(state.step); render(); window.scrollTo(0,0); }
 }
 function restartAll(){
   const depth = state.step-1;
@@ -1885,9 +1887,9 @@ window.addEventListener('popstate', (e)=>{
   if(ignorePops>0){ ignorePops--; return; }
   const target = e.state && e.state.qcStep;
   if(target && target>=1 && target<state.step){
-    state.step = target; render(); window.scrollTo(0,0); return;
+    leaveTo(target); state.step = target; render(); window.scrollTo(0,0); return;
   }
-  if(state.step>1){ state.step = Math.max(1, target||state.step-1); histReplace(state.step); render(); window.scrollTo(0,0); return; }
+  if(state.step>1){ leaveTo(Math.max(1, target||state.step-1)); state.step = Math.max(1, target||state.step-1); histReplace(state.step); render(); window.scrollTo(0,0); return; }
   // 첫 화면에서 뒤로 → 종료 확인 (트랩 아래로 내려온 상태)
   if(confirm('앱을 종료할까요?')){ exiting = true; history.back(); }
   else { histPush(1); }
