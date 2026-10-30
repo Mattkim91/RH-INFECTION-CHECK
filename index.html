@@ -418,6 +418,19 @@
     position:absolute;
     left:0;
   }
+  /* v1.59: 조건부 번호 목록 들여쓰기 최소화 */
+  ol.list{
+    margin:0;
+    padding:0 0 0 1.1em;
+    list-style:decimal;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  ol.list li{
+    font-size:14.5px;
+    line-height:1.55;
+    padding-left:2px;
+    color:var(--ink);
+  }
   ul.check{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;}
   ul.check li{
     font-size:14.5px;
@@ -1125,7 +1138,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.58';
+const APP_VERSION = 'v1.59';
 
 function headerHTML(){
   return `
