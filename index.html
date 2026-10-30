@@ -1107,7 +1107,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.31';
+const APP_VERSION = 'v1.32';
 
 function headerHTML(){
   return `
@@ -1134,12 +1134,10 @@ function renderWizard(){
     <div class="step-label">${state.step===1?'1. 직종':'2. 질환'}</div>
     ${body}
   </main>
-  <footer class="nav">
-    ${state.step>1 ? `<button class="btn ghost" id="btnBack" type="button">이전</button>` : ''}
-    <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>
-      ${state.step<2 ? '다음' : '결과 확인'}
-    </button>
-  </footer>
+  ${state.step===1 ? '' : `<footer class="nav">
+    <button class="btn ghost" id="btnBack" type="button">이전</button>
+    <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>결과 확인</button>
+  </footer>`}
   ${footLineHTML()}
   `;
 }
