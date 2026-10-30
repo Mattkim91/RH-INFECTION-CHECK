@@ -967,7 +967,7 @@ function decideForPart(diseases, part){
 
   return {
     status: worst.status,
-    title: multi ? `복합 감염 — ${worst.title}` : worst.title,
+    title: worst.title,
     desc: worst.desc,
     location: locSet,
   };
@@ -1138,7 +1138,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.59';
+const APP_VERSION = 'v1.60';
 
 function headerHTML(){
   return `
@@ -1288,8 +1288,8 @@ function filterDiseaseRows(){
 function renderSelStrip(){
   const el = document.getElementById('selStrip');
   if(!el) return;
-  if(!state.diseases.length){ el.innerHTML=''; setDisp(el,'none'); return; }
   setDisp(el,'');
+  if(!state.diseases.length){ el.innerHTML='<span class="sel-strip-lab">선택됨:</span> 없음'; return; }
   el.innerHTML = '<span class="sel-strip-lab">선택됨:</span>' + state.diseases.map(id=>{
     const d = DISEASES.find(x=>x.id===id); const lab = d ? d.label : id;
     return `<button type="button" class="sel-pill" data-unsel="${id}" aria-label="${lab} 선택 해제">${lab} ✕</button>`;
@@ -1351,7 +1351,7 @@ function step2HTML(){
   <div id="diseaseWrap">
   <div class="card">
     <h2>감염 유형 <span style="font-size:.72em;font-weight:600;color:#64748B;">(중복선택 가능)</span></h2>
-    <div class="sel-strip" id="selStrip" style="display:none"></div>
+    <div class="sel-strip" id="selStrip"><span class="sel-strip-lab">선택됨:</span> 없음</div>
     ${groupsHTML}
     <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
     <div class="disease-empty" id="diseaseEmpty" style="display:none">질환 목록에 없습니다.<br>기타 선택 후 필요한 부분은 감염관리팀에 문의해주세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타 선택</button></div>
@@ -1566,8 +1566,8 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const nurseCdiffNote = cdiffBanner ? `<div class="info-note"><b>ℹ C. difficile</b> 아포 형성 — 알코올 손소독만으로는 제거되지 않습니다(물·비누 손위생).</div>` : '';
   return `
     <div class="result-banner ${v.cls}">
-      <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel}</div>
       <div class="title">${vreTitle ? vreTitle : verdictTitleHTML(v.title)}</div>
+      <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
       ${branch}${vreTip}${driver}${holdLine}
     </div>
 
@@ -1647,8 +1647,8 @@ function renderResult(){
     ${cdiffBanner}
 
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">처방 판정 · ${diseaseLabel}</div>
       <div class="title">${verdictTitleHTML(banner.title)}</div>
+      <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
       <div class="rx-grid">${grid}</div>
       ${decision.perPart.some(({part,result})=>!part.ward && result.status!=='CONDITIONAL') ? '<div class="rx-note">작업·연하·언어는 병실 미운영(병실PT만) — 치료실 불가 시 해당 파트는 보류</div>' : ''}
     </div>
@@ -1700,8 +1700,8 @@ function renderResult(){
 
     bodyHTML = `
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">${meta.kicker} · ${diseaseLabel}</div>
       <div class="title">${verdictTitleHTML(decision.title)}</div>
+      <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
       ${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '<div class="desc">어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인.</div>' : ''}
     </div>
 
