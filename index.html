@@ -736,6 +736,10 @@ const DISEASES = [
   {id:'flu', aliases:['독감','influenza','flu'], label:'Influenza (독감 A·B형 등)', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
     note:'비말주의. 발열·호흡기 증상이 심하면 치료 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행.'},
+  {id:'other_droplet', aliases:['기타비말주의','백일해','성홍열','유행성이하선염','이하선염','볼거리','수막구균','풍진','pertussis','scarlet','mumps','meningococcal','rubella'], label:'기타 비말주의 (백일해·성홍열·이하선염·수막구균·풍진)', precaution:'droplet',
+    base:'WARD_ONLY_DROPLET',
+    special:true,
+    note:'중앙 감염성질환자 지침 비말주의 예시(2급: 백일해·성홍열·유행성이하선염·수막구균성 수막염·풍진 등). 독감·COVID-19는 별도 칩. 격리 유지 중 일반 치료실 이동 제한 → 병실물리치료만, OT·SW·ST·치료실 이동 불가. 직원·환자는 일반 마스크(비말). 해제·예외는 담당의·감염관리팀 확인.'},
   {id:'rsv', aliases:['RSV','호흡기세포융합'], label:'RSV 등 호흡기 감염', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의. 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
@@ -751,7 +755,7 @@ const DISEASES = [
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
   {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스'], label:'기타 감염주의 필요 상태', precaution:'unclear',
     base:'HOLD',
-    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris·국소 대상포진 등 미등재·구분이 애매한 경우는 기타로 선택 후 감염관리팀 확인. 수두·홍역·파종성 대상포진은 「기타 공기주의」 칩.'},
+    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris·국소 대상포진 등 미등재·구분이 애매한 경우는 기타로 선택 후 감염관리팀 확인. 수두·홍역·파종성 대상포진은 「기타 공기주의」, 백일해·성홍열·이하선염·수막구균·풍진은 「기타 비말주의」 칩.'},
 ];
 
 const TREATMENTS = [
@@ -832,6 +836,10 @@ function decideOne(d, part){
     case 'WARD_ONLY_COVID':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
         desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
+      break;
+    case 'WARD_ONLY_DROPLET':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (비말주의)',
+        desc:'기타 비말주의(백일해·성홍열·유행성이하선염·수막구균·풍진 등) 격리 유지 중에는 일반 치료실 이동이 제한되어 병실물리치료만 가능합니다. 직원·환자는 일반 마스크를 적용합니다. OT·SW·ST 등 병실방문치료 미운영 파트는 시행하지 않습니다. 해제·이동 허용은 담당의·감염관리팀 확인.'};
       break;
     case 'WARD_ONLY_AIRBORNE':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (공기주의)',
@@ -1099,7 +1107,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.28';
+const APP_VERSION = 'v1.29';
 
 function headerHTML(){
   return `
@@ -1367,6 +1375,7 @@ function buildConditions(diseases, role, decision){
   if(ids.includes('cdiff')) extras.push('C. difficile: 손위생은 가급적 물과 비누, 아포 유효 소독제(1:10 락스·바이오스팟·엔지셉트플러스와입스 등)로 접촉면·장비 소독.');
   if(ids.includes('covid')) extras.push('COVID-19: 환자·치료자 마스크, 다른 환자와 거리 확보(필요 시 1인 치료공간).');
   if(ids.includes('other_airborne')) extras.push('기타 공기주의(수두·홍역·파종성 대상포진): 직원 N95(동급)·Fit check, 병실물리치료만. 국소 대상포진·결핵과 구분.');
+  if(ids.includes('other_droplet')) extras.push('기타 비말주의(백일해·성홍열·이하선염·수막구균·풍진): 일반 마스크, 병실물리치료만. 독감·COVID와 구분.');
   if(ids.includes('scabies')) extras.push('옴: 호흡재활·기침 유발 치료는 보호구 수준 상향 검토.');
   if(role==='therapy' && decision.part && ['ot','swallow','st'].includes(decision.part.id)) extras.push('독립된 치료공간·시간·동선을 분리할 수 있는지 확인한다.');
   let title='조건부 치료 조건 확인', intro='아래 조건을 모두 충족할 수 있을 때 치료실 조건부 치료를 진행하세요.', hint='';
@@ -1414,6 +1423,7 @@ const NURSE_REASON = {
   cre:'CRE — 내부 기준상 병실치료만(치료실 내원 원칙적 불가, 격리해제로 풀리는 보류 아님)',
   covid:'비말주의 격리 중 — 일반 치료실 이동 제한(병실치료만)',
   other_airborne:'기타 공기주의(수두·홍역·파종성 대상포진) — 병실물리치료만, 직원 N95 착용 후 출입',
+  other_droplet:'기타 비말주의(백일해·성홍열·이하선염·수막구균·풍진) — 병실물리치료만, 일반 마스크',
   scabies:'옴 접촉주의 격리기간 — 병실치료만',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
@@ -1434,10 +1444,11 @@ const NURSE_VERDICT = {
 function nurseTodoList(status, ids){
   const todo = ['EMR(BESTCare) 감염 Alert와 실제 격리상태·해제 여부가 일치하는지 확인','격리실 입구 격리 표지(공기·접촉·비말) 확인'];
   const sym = [];
-  if(ids.some(i=>['tb','covid','flu','rsv'].includes(i))) sym.push('발열·기침·객담 등 호흡기 증상');
+  if(ids.some(i=>['tb','covid','flu','rsv','other_droplet'].includes(i))) sym.push('발열·기침·객담 등 호흡기 증상');
   if(ids.includes('flu')) sym.push('(독감) 증상이 심하면 보류');
   if(ids.includes('cdiff')) sym.push('설사 여부');
   if(ids.includes('scabies')) sym.push('피부 병변');
+  if(ids.includes('other_airborne')) sym.push('(기타 공기주의) 수포·발진 등 피부 병변');
   if(ids.some(i=>['unknown_fever','other'].includes(i))) sym.push('발열·호흡기 증상·피부 병변·설사 등 현재 증상 전반');
   todo.push('현재 증상 확인: '+(sym.length?sym.join(' · '):'발열·호흡기 증상·피부 병변·설사 등'));
   if(ids.includes('protective')) todo.push('(보호격리) 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 환자 전용 준비 확인');
@@ -1448,6 +1459,8 @@ function nurseTodoList(status, ids){
     todo.push('병실치료 필요 여부 확인 후 재활팀에 병실치료 요청');
     todo.push('병실 내 사용할 장비와 소독 가능 여부 확인');
     if(ids.includes('tb')) todo.push('(결핵) 재활치료 미시행 — 재활팀 호출·이송 금지, 재개는 담당의·감염관리팀 확인 후');
+    if(ids.includes('other_airborne')) todo.push('(기타 공기주의) 재활팀에 병실 PT·직원 N95(동급) 필요 안내');
+    if(ids.includes('other_droplet')) todo.push('(기타 비말주의) 재활팀에 병실 PT·일반 마스크 필요 안내');
   }else{
     todo.push('치료실 이동 가능 여부(이동·마스크 유지·보호구 적용 가능) 확인');
     todo.push('보호자·간병인·이송요원 동반 여부 확인');
