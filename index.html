@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.71';
+const APP_VERSION = 'v1.72';
 
 function headerHTML(){
   return `
@@ -1725,7 +1725,14 @@ function renderResult(){
     const wardHoldMix = groups.WARD_ONLY.length>0 && groups.HOLD.length>0 && groups.CONDITIONAL.length===0;
     let banner = doctorBannerCopy(decision.status);
     let bannerCls = meta.cls;
-    if(wardHoldMix){
+    const vreOtherDoc = diseases.some(d=>d.id==='vre') && state.admit==='other';
+    if(wardHoldMix && vreOtherDoc){
+      banner = {
+        title:'병실PT만 처방 가능 · 작업·연하·언어 미시행(타과 입원 VRE)',
+        desc:'물리치료는 병실PT만 가능합니다. 작업·연하·언어는 타과 입원 VRE로 미시행입니다(격리해제 대기 보류 아님). 아래 파트별 상태를 확인한 뒤 처방하세요.'
+      };
+      bannerCls = 'banner-ward';
+    } else if(wardHoldMix){
       banner = {
         title:'병실PT만 처방 가능 · 작업·연하·언어 보류',
         desc:'물리치료는 병실PT만 가능합니다. 작업·연하·언어는 병실 미운영이라 치료실 불가 시 보류입니다. 아래 파트별 상태를 확인한 뒤 처방하세요.'
@@ -1735,7 +1742,7 @@ function renderResult(){
     const memoBits = [];
     if(groups.CONDITIONAL.length) memoBits.push(`${groups.CONDITIONAL.join('·')} 치료실`);
     if(groups.WARD_ONLY.length) memoBits.push(`${groups.WARD_ONLY.join('·')} 병실PT`);
-    if(groups.HOLD.length) memoBits.push(`${groups.HOLD.join('·')} 보류`);
+    if(groups.HOLD.length) memoBits.push(`${groups.HOLD.join('·')} ${vreOtherDoc?'미시행(타과 입원 VRE)':'보류'}`);
     const memo = `[감염] ${diseaseLabel} (${decision.ppeTag}) — ${memoBits.join(', ')}. EMR Alert·격리상태 확인 후 진행 부탁드립니다.`;
     if(state.expandedTreat.docPpe===undefined) state.expandedTreat.docPpe = false;
     const ppeOpen = !!state.expandedTreat.docPpe;
@@ -1750,7 +1757,7 @@ function renderResult(){
       <div class="title">${verdictTitleHTML(banner.title)}</div>
       <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
       <div class="rx-grid">${grid}</div>
-      ${decision.perPart.some(({part,result})=>!part.ward && result.status!=='CONDITIONAL') ? '<div class="rx-note">작업·연하·언어는 병실 미운영(병실PT만) — 치료실 불가 시 해당 파트는 보류</div>' : ''}
+      ${decision.perPart.some(({part,result})=>!part.ward && result.status!=='CONDITIONAL') ? (vreOtherDoc ? '<div class="rx-note">작업·연하·언어 미시행(타과 입원 VRE)</div>' : '<div class="rx-note">작업·연하·언어는 병실 미운영(병실PT만) — 치료실 불가 시 해당 파트는 보류</div>') : ''}
     </div>
 
     <div class="card">
