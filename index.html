@@ -674,6 +674,10 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disease-search input{flex:1;min-width:0;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:inherit;outline:none;-webkit-appearance:none;}
 .disease-search input::placeholder{color:#9aa4ad;}
 .disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
+.dz-searching .card{background:transparent;border:0;box-shadow:none;padding:0;margin:0 0 4px;}
+.dz-searching .card>h2,.dz-searching .card>.hint,.dz-searching .subgroup-title{display:none!important;}
+.dz-searching .radio-list{margin:0 0 6px;}
+.disease-count{font-size:13px;color:#5b6670;margin:-6px 0 8px;}
 .disease-search button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;cursor:pointer;}
 .ctx-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}
 .ctx-bar-lab{font-size:13px;font-weight:700;color:#6b7680;}
@@ -1110,7 +1114,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.34';
+const APP_VERSION = 'v1.35';
 
 function headerHTML(){
   return `
@@ -1223,6 +1227,13 @@ function filterDiseaseRows(){
   let anyVis = false;
   Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{ if(isVis(el)) anyVis=true; });
   if(sc){ setDisp(sc, Array.from(sc.querySelectorAll('.radio-row[data-disease]')||[]).some(r=>isVis(r)) ? '' : 'none'); }
+  const wrap = document.getElementById('diseaseWrap');
+  if(wrap) wrap.classList.toggle('dz-searching', q);
+  const cnt = document.getElementById('diseaseCount');
+  if(cnt){
+    const n = Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).filter(r=>isVis(r)).length;
+    cnt.textContent = '검색 결과 '+n+'건'; setDisp(cnt, q ? '' : 'none');
+  }
   const em = document.getElementById('diseaseEmpty');
   if(em) setDisp(em, anyVis ? 'none' : '');
   const clr = document.getElementById('diseaseSearchBtn');
@@ -1300,6 +1311,8 @@ function step2HTML(){
       <input type="search" id="diseaseSearch" placeholder="질환명 검색 (예: MRSA, 결핵)" autocomplete="off" aria-label="질환 검색">
       <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
     </div>
+    <div class="disease-count" id="diseaseCount" style="display:none"></div>
+  <div id="diseaseWrap">
   <div class="card">
     <h2>감염 유형</h2>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
@@ -1312,6 +1325,7 @@ function step2HTML(){
     <h2>특별 관리가 필요한 감염</h2>
     <p class="hint">격리 단계(유지 중 / 요건 충족 후)에 따라 치료 가능 여부가 달라지는 질환입니다.</p>
     <div class="radio-list">${specialRows}</div>
+  </div>
   </div>
   `;
 }
@@ -1333,7 +1347,8 @@ function bindWizardEvents(){
   const ds = document.getElementById('diseaseSearch');
   if(ds){
     ds.value = state.diseaseQuery;
-    ds.oninput=()=>{ state.diseaseQuery = ds.value; filterDiseaseRows(); };
+    ds.oninput=()=>{ state.diseaseQuery = ds.value; filterDiseaseRows();
+      const box=document.querySelector('.disease-search'); if(state.diseaseQuery && box && box.scrollIntoView){ try{ box.scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){} } };
     const sb = document.getElementById('diseaseSearchBtn');
     if(sb) sb.onclick=()=>{ if(state.diseaseQuery){ state.diseaseQuery=''; ds.value=''; filterDiseaseRows(); } ds.focus(); };
     filterDiseaseRows();
