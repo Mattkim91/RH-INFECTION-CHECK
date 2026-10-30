@@ -756,7 +756,7 @@ const DISEASES = [
     base:'WARD_ONLY_SCABIES',
     special:true,
     note:'접촉주의. 격리기간 중 병실치료만. 옴 접촉주의, 격리기간 치료 시작 후 24시간까지(재활 병실치료만 해제 시점은 감염관리팀 확인).'},
-  {id:'protective', aliases:['보호격리','호중구','GVHD','AIDS','HIV','조혈모세포'], label:'보호격리', precaution:'protective',
+  {id:'protective', aliases:['보호격리','호중구','GVHD','AIDS','HIV','조혈모세포'], label:'보호격리 (조혈모세포이식·호중구↓·GVHD·AIDS 등)', precaution:'protective',
     base:'WARD_ONLY_PROTECTIVE',
     note:'보호격리 대상(동종·자가 조혈모세포이식, 호중구감소증(ANC 500/㎣ 이하), 급성 GVHD Grade II 이상, AIDS(HIV), 담당의가 감염위험 높다고 판단한 경우). 격리 유지 중 병실 밖으로 나오지 않음 → 병실물리치료만 가능, 치료실 이동·OT·SW·ST 불가. 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 등 환자 전용. 세부·예외는 담당의·감염관리팀 확인.'},
   {id:'unknown_fever', aliases:['발열','원인미상'], label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
@@ -1116,7 +1116,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.40';
+const APP_VERSION = 'v1.41';
 
 function headerHTML(){
   return `
