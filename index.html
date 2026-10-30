@@ -682,6 +682,7 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
 .disease-search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;padding:0;border:0;background:transparent;font-size:13px;line-height:28px;cursor:pointer;color:#5b6670;}
 .ctx-bar-with-search{flex-wrap:nowrap;}
+.step-label-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ctx-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}
 .ctx-bar-lab{font-size:13px;font-weight:700;color:#6b7680;}
 .ctx-pill{font-size:13.5px;font-weight:700;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 12px;}
@@ -1120,7 +1121,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.47';
+const APP_VERSION = 'v1.48';
 
 function headerHTML(){
   return `
@@ -1514,7 +1515,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const nurseCdiffNote = cdiffBanner ? `<div class="info-note"><b>ℹ C. difficile</b> 아포 형성 — 알코올 손소독만으로는 제거되지 않습니다(물·비누 손위생).</div>` : '';
   return `
     <div class="result-banner ${v.cls}">
-      <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel} · 간호직</div>
+      <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel}</div>
       <div class="title">${v.title}</div>
       <ul class="desc" style="margin:4px 0 0 18px;padding:0;">${reasonList}</ul>
       ${branch}${maskOff}
@@ -1596,7 +1597,7 @@ function renderResult(){
     ${cdiffBanner}
 
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">처방 판정 · ${diseaseLabel} · 의사직</div>
+      <div class="kicker">처방 판정 · ${diseaseLabel}</div>
       <div class="title">${banner.title}</div>
       <div class="rx-grid">${grid}</div>
       ${decision.perPart.some(({part,result})=>!part.ward && result.status!=='CONDITIONAL') ? '<div class="rx-note">작업·연하·언어는 병실 미운영(병실PT만) — 치료실 불가 시 해당 파트는 보류</div>' : ''}
@@ -1647,7 +1648,7 @@ function renderResult(){
 
     bodyHTML = `
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">${meta.kicker} · ${diseaseLabel} · ${decision.part.label}</div>
+      <div class="kicker">${meta.kicker} · ${diseaseLabel}</div>
       <div class="title">${decision.title}</div>
       <div class="desc">${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인. 세부 기준은 아래 「결핵 해제·재개 기준」 참고.' : decision.desc}</div>
       <div class="tag-row">
@@ -1698,8 +1699,7 @@ function renderResult(){
   return `
   ${headerHTML()}
   <main>
-    <div class="step-label">3. 결과</div>
-    ${contextBarHTML()}
+    <div class="step-label step-label-row">3. 결과${selectedPartLabel()?`<span class="ctx-pill" aria-label="선택 직종">${selectedPartLabel()}</span>`:''}</div>
     ${bodyHTML}
     <div class="disclaimer">
       본 도구는 병원 감염관리 지침을 대체하지 않으며, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
