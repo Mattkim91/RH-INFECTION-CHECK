@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.67';
+const APP_VERSION = 'v1.68';
 
 function headerHTML(){
   return `
@@ -1232,7 +1232,30 @@ function renderWizard(){
 }
 
 function diseasesReady(){
-  return state.diseases.length>0 && (!state.diseases.includes('vre') || !!state.admit);
+  // v1.68: VRE 입원 구분은 결과 이동 시 모달로 확인 (선택 중 방해 X)
+  return state.diseases.length>0;
+}
+function needsAdmitChoice(){ return state.diseases.includes('vre') && !state.admit; }
+function showAdmitModal(){
+  if(document.getElementById('admitModal')) return;
+  const m=document.createElement('div');
+  m.id='admitModal';
+  m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.setAttribute('aria-labelledby','admitModalTitle');
+  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+  const bs='display:block;width:100%;min-height:56px;margin-top:10px;font-size:1.1rem;font-weight:700;border-radius:12px;border:0;cursor:pointer;';
+  m.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:22px 18px 16px;box-shadow:0 10px 30px rgba(0,0,0,.3);">
+    <h2 id="admitModalTitle" style="margin:0 0 6px;font-size:1.25rem;color:#0F172A;">VRE 입원 구분</h2>
+    <div style="font-size:.95rem;color:#475569;margin-bottom:6px;">결과를 보려면 입원 구분을 선택하세요.</div>
+    <button type="button" data-admit-pick="rh" style="${bs}background:#1D4ED8;color:#fff;">RH 입원</button>
+    <button type="button" data-admit-pick="other" style="${bs}background:#0F766E;color:#fff;">타과 입원</button>
+    <button type="button" data-admit-cancel style="${bs}min-height:44px;font-size:.95rem;font-weight:600;background:#F1F5F9;color:#334155;">질환 다시 선택</button>
+  </div>`;
+  document.body.appendChild(m);
+  m.querySelectorAll('[data-admit-pick]').forEach(b=>{
+    b.onclick=()=>{ state.admit=b.dataset.admitPick; m.remove(); goStep(3); };
+  });
+  m.querySelector('[data-admit-cancel]').onclick=()=>m.remove();
+  const f=m.querySelector('[data-admit-pick]'); if(f) f.focus();
 }
 function admitRowHTML(){
   if(!state.diseases.includes('vre')) return '';
@@ -1449,6 +1472,7 @@ function bindWizardEvents(){
   if(next) next.onclick=()=>{
     if(next.disabled) return;
     if(state.step===2 && !diseasesReady()) return;
+    if(state.step===2 && needsAdmitChoice()){ showAdmitModal(); return; }
     goStep(state.step+1);
   };
 }
@@ -1859,7 +1883,7 @@ function renderResult(){
 /* v1.23 뒤로가기(스와이프·시스템 back) 트랩 — 화면 단계와 history 동기화 */
 function histPush(step){ try{ history.pushState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
 function histReplace(step){ try{ history.replaceState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
-function goStep(n){ state.step=n; histPush(n); render(); window.scrollTo(0,0); }
+function goStep(n){ if(n===3 && state.diseases.includes('vre') && !state.admit){ showAdmitModal(); return; } const _am=document.getElementById('admitModal'); if(_am) _am.remove(); state.step=n; histPush(n); render(); window.scrollTo(0,0); }
 // 화면 '이전' = 시스템 뒤로가기와 동일 → popstate가 화면을 갱신 (스택 일치)
 function goBack(){
   if(state.step<=1) return;
