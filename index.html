@@ -1107,7 +1107,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.29';
+const APP_VERSION = 'v1.30';
 
 function headerHTML(){
   return `
@@ -1285,11 +1285,11 @@ function step2HTML(){
   <div class="card">
     <h2>감염 유형</h2>
     <div class="disease-search">
-      <input type="search" id="diseaseSearch" placeholder="예: MRSA, VRE, 결핵" autocomplete="off" aria-label="질환 검색">
+      <input type="search" id="diseaseSearch" placeholder="질환명 검색 (예: MRSA, 결핵)" autocomplete="off" aria-label="질환 검색">
       <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
     </div>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
-    <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
+    <p class="hint">질환명을 검색하거나, 아래로 넘겨 목록에서 고르세요. 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
     ${groupsHTML}
     <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
   </div>
@@ -1304,7 +1304,7 @@ function step2HTML(){
 
 function bindWizardEvents(){
   appEl.querySelectorAll('[data-part]').forEach(el=>{
-    el.onclick=()=>{state.part=el.dataset.part; render(); const b=appEl.querySelector('[data-part="'+state.part+'"]'); if(b&&b.focus) b.focus();};
+    el.onclick=()=>{state.part=el.dataset.part; goStep(2);};
   });
   appEl.querySelectorAll('[data-disease]').forEach(el=>{
     el.onclick=()=>toggleDisease(el.dataset.disease);
