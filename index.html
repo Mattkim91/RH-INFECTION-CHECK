@@ -703,7 +703,7 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .ctx-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}
 .ctx-bar-lab{font-size:13px;font-weight:700;color:#6b7680;}
 .ctx-pill{font-size:13.5px;font-weight:700;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 12px;}
-.sel-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 4px;}
+.sel-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;align-content:flex-start;margin:8px 0 4px;min-height:40px;}
 .sel-strip-lab{font-size:13.5px;font-weight:700;color:var(--navy);}
 .sel-strip-empty{font-size:12.5px;font-weight:500;color:var(--navy);font-family:inherit;}
 .sel-pill{font-family:inherit;font-size:13.5px;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
@@ -736,56 +736,56 @@ const STAFF_ROLES = [
 ];
 
 const DISEASES = [
-  {id:'mrsa', label:'MRSA / CRPA(MRPA) / MRAB', precaution:'contact',
+  {id:'mrsa', short:'MRSA', label:'MRSA / CRPA(MRPA) / MRAB', precaution:'contact',
     aliases:['MRSA','CRPA','MRPA','MRAB','CRAB','메티실린','아시네토박터'],
     base:'CONDITIONAL',
     note:'접촉주의. 치료실 조건부 치료 우선. 한 칩에 묶인 동일 접촉주의 원칙(MRSA·MRPA·MRAB, CRPA = MRPA).'},
-  {id:'vre', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
+  {id:'vre', short:'VRE', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
     note:'접촉주의·다제내성균. 가급적 병실 우선·치료실 조건부·PT는 111병동재활치료실 우선배정.'},
-  {id:'cre', aliases:['CRE','CPE','카바페넴'], label:'CRE(CPE)', precaution:'contact_mdro',
+  {id:'cre', short:'CRE', aliases:['CRE','CPE','카바페넴'], label:'CRE(CPE)', precaution:'contact_mdro',
     base:'WARD_ONLY_CRE',
     special:true,
     note:'접촉주의·다제내성균. 병실PT만·병실 밖으로 나오지 않음(치료실 내원 원칙적 불가)·병실 미운영 파트(작업·연하·언어)는 보류(격리해제로 풀리는 보류가 아님). 다제내성균 해제: 1주 이상 간격 연속 3회 음성 시 해제(격리 미해제 재입원 VRE·CRE는 2일 간격 3회). 치료 필요 시 PT 전환은 담당의·감염관리팀 확인.'},
-  {id:'cdiff', aliases:['CDI','C.diff','클로스트리디움','디피실'], label:'C. difficile (CDI)', precaution:'contact_cdiff',
+  {id:'cdiff', short:'CDI', aliases:['CDI','C.diff','클로스트리디움','디피실'], label:'C. difficile (CDI)', precaution:'contact_cdiff',
     base:'CONDITIONAL',
     note:'접촉주의·아포 형성균. 치료실 조건부 치료 우선.'},
-  {id:'tb', aliases:['결핵','TB','폐결핵','후두결핵','AFB'], label:'활동성/의심 폐·후두 결핵 (배액 있는 폐외 포함)', precaution:'airborne',
+  {id:'tb', short:'결핵', aliases:['결핵','TB','폐결핵','후두결핵','AFB'], label:'활동성/의심 폐·후두 결핵 (배액 있는 폐외 포함)', precaution:'airborne',
     base:'HOLD_TB',
     special:true,
     note:'공기주의. 활동성 결핵은 어떤 형태로든(치료실·병실) 재활치료를 시행하지 않음(보류). 재개는 담당의·감염관리팀 확인. 해제기준: 폐·후두 결핵 확진은 효과적 치료로 임상 호전 + 서로 다른 날 AFB 3회 음성, 의심은 다른 진단 또는 객담 AFB smear 3회 음성(8~24시간 간격, 1회 이상 이른 아침). 폐외결핵은 배액 병변 있으면 공기·접촉, 없으면 표준(활동성 폐결핵 여부 확인).'},
-  {id:'other_airborne', aliases:['기타공기주의','수두','홍역','파종성대상포진','파종성 대상포진','대상포진','전신대상포진','varicella','measles','zoster','shingles','VZV','chickenpox'], label:'기타 공기주의 (수두·홍역·파종성 대상포진)', precaution:'airborne',
+  {id:'other_airborne', short:'기타공기주의', aliases:['기타공기주의','수두','홍역','파종성대상포진','파종성 대상포진','대상포진','전신대상포진','varicella','measles','zoster','shingles','VZV','chickenpox'], label:'기타 공기주의 (수두·홍역·파종성 대상포진)', precaution:'airborne',
     base:'WARD_ONLY_AIRBORNE',
     special:true,
     note:'중앙 감염성질환자 지침 공기주의 예시(수두·홍역·파종성 대상포진). 활동성 결핵은 별도 칩(보류). 공기주의 유지 중 일반 치료실 이동 제한 → 병실물리치료만(직원 N95 동급 착용 후 병실 출입 가능), 작업·연하·언어·치료실 이동 불가. 국소 대상포진은 해당 없음 → 「기타」 또는 감염관리팀 확인. 해제·예외는 담당의·감염관리팀.'},
-  {id:'covid', aliases:['코로나','COVID','COVID19','SARS'], label:'COVID-19', precaution:'droplet',
+  {id:'covid', short:'COVID-19', aliases:['코로나','COVID','COVID19','SARS'], label:'COVID-19', precaution:'droplet',
     base:'WARD_ONLY_COVID',
     special:true,
     note:'비말주의. 격리 중 일반 치료실 이동 제한·병실PT만(작업·연하·언어 불가). 해제·이동 허용 후 치료실 조건부 전환·마스크 제거 치료는 담당의·감염관리팀 확인.'},
-  {id:'flu', aliases:['독감','influenza','flu'], label:'Influenza (독감 A·B형 등)', precaution:'droplet',
+  {id:'flu', short:'Influenza', aliases:['독감','influenza','flu'], label:'Influenza (독감 A·B형 등)', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
     note:'비말주의. 발열·호흡기 증상이 심하면 치료 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행.'},
-  {id:'other_droplet', aliases:['기타비말주의','백일해','성홍열','유행성이하선염','이하선염','볼거리','수막구균','풍진','pertussis','scarlet','mumps','meningococcal','rubella'], label:'기타 비말주의 (백일해·성홍열·이하선염·수막구균·풍진)', precaution:'droplet',
+  {id:'other_droplet', short:'기타비말주의', aliases:['기타비말주의','백일해','성홍열','유행성이하선염','이하선염','볼거리','수막구균','풍진','pertussis','scarlet','mumps','meningococcal','rubella'], label:'기타 비말주의 (백일해·성홍열·이하선염·수막구균·풍진)', precaution:'droplet',
     base:'WARD_ONLY_DROPLET',
     special:true,
     note:'중앙 감염성질환자 지침 비말주의 예시(2급: 백일해·성홍열·유행성이하선염·수막구균성 수막염·풍진 등). 독감·COVID-19는 별도 칩. 격리 유지 중 일반 치료실 이동 제한 → 병실물리치료만, 작업·연하·언어·치료실 이동 불가. 직원·환자는 일반 마스크(비말). 해제·예외는 담당의·감염관리팀 확인.'},
-  {id:'rsv', aliases:['RSV','호흡기세포융합'], label:'RSV (호흡기세포융합바이러스)', precaution:'contact',
+  {id:'rsv', short:'RSV', aliases:['RSV','호흡기세포융합'], label:'RSV (호흡기세포융합바이러스)', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의. 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
-  {id:'rota_noro', aliases:['로타','로타바이러스','rotavirus','노로','노로바이러스','norovirus','로타·노로'], label:'로타·노로바이러스', precaution:'contact',
+  {id:'rota_noro', short:'로타노로', aliases:['로타','로타바이러스','rotavirus','노로','노로바이러스','norovirus','로타·노로'], label:'로타·노로바이러스', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의(중앙지침 심평원 격리실 대상 \'로타·노로바이러스 등\'). 직원 장갑·긴팔 가운, 손위생은 가급적 물과 비누(노로는 알코올 손소독제 효과가 낮을 수 있음). 설사·구토 지속 시 담당의·감염관리팀 확인, 증상 조절되면 치료실 조건부 치료.'},
-  {id:'scabies', aliases:['옴','scabies'], label:'옴', precaution:'contact',
+  {id:'scabies', short:'옴', aliases:['옴','scabies'], label:'옴', precaution:'contact',
     base:'WARD_ONLY_SCABIES',
     special:true,
     note:'접촉주의. 격리기간 중 병실PT만(작업·연하·언어 불가). 옴 접촉주의, 격리기간 치료 시작 후 24시간까지(재활 병실PT만 해제 시점은 감염관리팀 확인).'},
-  {id:'protective', aliases:['보호격리','호중구','GVHD','AIDS','HIV','조혈모세포'], label:'보호격리 (조혈모세포이식·호중구↓·GVHD·AIDS 등)', precaution:'protective',
+  {id:'protective', short:'보호격리', aliases:['보호격리','호중구','GVHD','AIDS','HIV','조혈모세포'], label:'보호격리 (조혈모세포이식·호중구↓·GVHD·AIDS 등)', precaution:'protective',
     base:'WARD_ONLY_PROTECTIVE',
     note:'보호격리 대상(동종·자가 조혈모세포이식, 호중구감소증(ANC 500/㎣ 이하), 급성 GVHD Grade II 이상, AIDS(HIV), 담당의가 감염위험 높다고 판단한 경우). 격리 유지 중 병실 밖으로 나오지 않음 → 병실물리치료만 가능, 치료실 이동·작업·연하·언어 불가. 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 등 환자 전용. 세부·예외는 담당의·감염관리팀 확인.'},
-  {id:'unknown_fever', aliases:['발열','원인미상'], label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
+  {id:'unknown_fever', short:'원인미상발열', aliases:['발열','원인미상'], label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
-  {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스','국소대상포진','국소 대상포진','대상포진','ESBL','폐렴','pneumonia'], label:'기타 감염주의 필요 상태', precaution:'unclear',
+  {id:'other', short:'기타', aliases:['기타','VRSA','C.auris','칸디다아우리스','국소대상포진','국소 대상포진','대상포진','ESBL','폐렴','pneumonia'], label:'기타 감염주의 필요 상태', precaution:'unclear',
     base:'HOLD',
     note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris·국소 대상포진 등 미등재·구분이 애매한 경우는 기타로 선택 후 감염관리팀 확인. 수두·홍역·파종성 대상포진은 「기타 공기주의」, 백일해·성홍열·이하선염·수막구균·풍진은 「기타 비말주의」 칩.'},
 ];
@@ -1139,7 +1139,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.62';
+const APP_VERSION = 'v1.63';
 
 function headerHTML(){
   return `
@@ -1292,8 +1292,10 @@ function renderSelStrip(){
   setDisp(el,'');
   if(!state.diseases.length){ el.innerHTML='<span class="sel-strip-lab">선택됨:</span> <span class="sel-strip-empty">없음</span>'; return; }
   el.innerHTML = '<span class="sel-strip-lab">선택됨:</span>' + state.diseases.map(id=>{
-    const d = DISEASES.find(x=>x.id===id); const lab = d ? d.label : id;
-    return `<button type="button" class="sel-pill" data-unsel="${id}" aria-label="${lab} 선택 해제">${lab} ✕</button>`;
+    const d = DISEASES.find(x=>x.id===id);
+    const full = d ? d.label : id;
+    const lab = (d && d.short) ? d.short : full;
+    return `<button type="button" class="sel-pill" data-unsel="${id}" aria-label="${full} 선택 해제">${lab} ✕</button>`;
   }).join('');
   Array.from(el.querySelectorAll('[data-unsel]')||[]).forEach(b=>{ b.onclick=()=>toggleDisease(b.dataset.unsel); });
 }
