@@ -1121,7 +1121,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.48';
+const APP_VERSION = 'v1.49';
 
 function headerHTML(){
   return `
@@ -1486,6 +1486,16 @@ const NURSE_VERDICT = {
 };
 
 
+function nurseCondLines(ids){
+  // v1.49: 간호 — 치료실 조건 사실 요약(2~4줄, 지시형 아님)
+  const L=[];
+  if(ids.includes('flu')) L.push('독감: 발열·기침이 호전되고 마스크 유지가 되면 치료실 진행');
+  if(ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) L.push('이동 중 환자 마스크 착용 · 마스크 벗는 과제(연하 등)는 독립 공간에서 진행');
+  if(ids.includes('cdiff')||ids.includes('rota_noro')) L.push((ids.includes('cdiff')?'CDI':'로타·노로')+': 치료실은 물·비누 손위생과 접촉면·장비 소독으로 운영');
+  if(ids.includes('vre')) L.push('VRE: 병실PT도 대안 · 타과 입원 환자는 병실PT만');
+  L.push('다른 환자와 시간·공간 분리(가급적 마지막 시간대), 치료 후 소독은 치료실에서 진행');
+  return L.slice(0,4);
+}
 function nurseScenarioHTML(decision, ids){
   // v1.46: 간호 화면은 「보낼지」만 — 보호구·동선·소독 등 치료실 몫은 치료직 화면에서
   const s = decision.status;
@@ -1499,6 +1509,7 @@ function nurseScenarioHTML(decision, ids){
   return `<div class="card"><div class="section-title"><span class="ico">2</span>어디서 치료하나</div>
     <div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomOk?'pill-conditional':'pill-hold'}">${roomOk?'이송 가능(조건부)':'불가'}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>
     <div class="scenario ${wardOk?'':'scenario-off'}"><div class="sc-head">🛏 병실PT <span class="status-pill ${wardOk?'pill-ward':'pill-hold'}">${wardOk?(s==='WARD_ONLY'?'가능':'대안'):'보류'}</span></div><p class="hint" style="margin:0;">${wardNote}</p></div>
+    ${roomOk?(()=>{const o=!!state.expandedTreat.nurseCond;return `<div class="accordion-item ${o?'open':''}" style="margin-top:8px;"><div class="accordion-header" data-accordion="nurseCond" role="button" tabindex="0" aria-expanded="${o}"><span>치료실에서 적용하는 조건</span><span class="chev">▾</span></div><div class="accordion-body"><ul class="list">${nurseCondLines(ids).map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;})():''}
   </div>`;
 }
 
