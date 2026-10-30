@@ -1125,7 +1125,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.55';
+const APP_VERSION = 'v1.56';
 
 function headerHTML(){
   return `
@@ -1547,9 +1547,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
     <div class="result-banner ${v.cls}">
       <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel}</div>
       <div class="title">${verdictTitleHTML(v.title)}</div>
-      <ul class="desc" style="margin:4px 0 0 18px;padding:0;">${reasonList}</ul>
-      ${branch}${maskOff}
-      <div class="tag-row">${precIconHTML(decision.ppeTag)}</div>
+      ${branch}
     </div>
 
     ${nurseScenarioHTML(decision, ids)}
@@ -1682,10 +1680,7 @@ function renderResult(){
     <div class="result-banner ${meta.cls}">
       <div class="kicker">${meta.kicker} · ${diseaseLabel}</div>
       <div class="title">${verdictTitleHTML(decision.title)}</div>
-      <div class="desc">${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인. 세부 기준은 아래 「결핵 해제·재개 기준」 참고.' : decision.desc}</div>
-      <div class="tag-row">
-        ${precIconHTML(decision.ppeTag)}
-      </div>
+      ${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '<div class="desc">어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인.</div>' : ''}
     </div>
 
     ${tbBanner}
