@@ -641,6 +641,7 @@ footer.nav{background:linear-gradient(to top,var(--bg) 65%,rgba(243,246,249,0));
 .banner-conditional{background:linear-gradient(150deg,#0F5FA8 0%,#1D7FD1 100%);}
 .banner-ward{background:linear-gradient(150deg,#A4570A 0%,#D07A1A 100%);}
 .banner-hold{background:linear-gradient(150deg,#7F1D1D 0%,#B42318 100%);}
+.banner-symptom{background:linear-gradient(150deg,#8A5A00 0%,#C98A00 100%);}
 .status-pill{font-size:13px;padding:5px 10px;}
 .part-status-row .txt{font-size:16px;}
 .part-status-row .txt small{font-size:14px;}
@@ -717,7 +718,7 @@ const STAFF_ROLES = [
 
 const DISEASES = [
   {id:'mrsa', label:'MRSA / CRPA(MRPA) / MRAB', precaution:'contact',
-    aliases:['MRSA','CRPA','MRPA','MRAB','메티실린'],
+    aliases:['MRSA','CRPA','MRPA','MRAB','CRAB','메티실린','아시네토박터'],
     base:'CONDITIONAL',
     note:'접촉주의. 치료실 조건부 치료 우선. 한 칩에 묶인 동일 접촉주의 원칙(MRSA·MRPA·MRAB, CRPA = MRPA).'},
   {id:'vre', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
@@ -749,7 +750,7 @@ const DISEASES = [
     base:'WARD_ONLY_DROPLET',
     special:true,
     note:'중앙 감염성질환자 지침 비말주의 예시(2급: 백일해·성홍열·유행성이하선염·수막구균성 수막염·풍진 등). 독감·COVID-19는 별도 칩. 격리 유지 중 일반 치료실 이동 제한 → 병실물리치료만, 작업·연하·언어·치료실 이동 불가. 직원·환자는 일반 마스크(비말). 해제·예외는 담당의·감염관리팀 확인.'},
-  {id:'rsv', aliases:['RSV','호흡기세포융합'], label:'RSV 등 호흡기 감염', precaution:'contact',
+  {id:'rsv', aliases:['RSV','호흡기세포융합'], label:'RSV (호흡기세포융합바이러스)', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의. 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
   {id:'scabies', aliases:['옴','scabies'], label:'옴', precaution:'contact',
@@ -762,7 +763,7 @@ const DISEASES = [
   {id:'unknown_fever', aliases:['발열','원인미상'], label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
-  {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스'], label:'기타 감염주의 필요 상태', precaution:'unclear',
+  {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스','국소대상포진','국소 대상포진','대상포진','ESBL','노로','노로바이러스','norovirus','폐렴','pneumonia'], label:'기타 감염주의 필요 상태', precaution:'unclear',
     base:'HOLD',
     note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris·국소 대상포진 등 미등재·구분이 애매한 경우는 기타로 선택 후 감염관리팀 확인. 수두·홍역·파종성 대상포진은 「기타 공기주의」, 백일해·성홍열·이하선염·수막구균·풍진은 「기타 비말주의」 칩.'},
 ];
@@ -794,7 +795,7 @@ const PRECAUTION_PPE = {
   droplet_air:{tag:'비말·공기', ppe:['최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
   airborne:{tag:'공기주의', ppe:['직원 N95(동급) 마스크 — 착용 시 Fit check(양손으로 감싸고 숨 불어 누설 확인), 탈의는 병실 밖으로 나와 문을 닫은 후','환자는 일반 마스크 착용','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
   protective:{tag:'보호격리', ppe:['병실 출입 전 손위생','직원 일반 마스크 착용','체온계·혈압계 등 환자 전용']},
-  unclear:{tag:'표준주의 + 확인 필요', ppe:['표준주의 적용, 추가 보호구는 확인 후 결정','병동·담당의 확인 전까지 추가 보호구 임의 적용 보류']},
+  unclear:{tag:'표준주의 + 확인 필요', ppe:['표준주의 적용, 추가 보호구는 확인 후 결정','병동·담당의 확인 전까지 표준주의 유지, 추가 보호구는 확인 후 결정']},
 };
 
 /* =========================================================
@@ -1116,7 +1117,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.43';
+const APP_VERSION = 'v1.44';
 
 function headerHTML(){
   return `
@@ -1247,6 +1248,17 @@ function filterDiseaseRows(){
     const n = Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).filter(r=>isVis(r)).length;
     cnt.textContent = '검색 결과 '+n+'건'; setDisp(cnt, q ? '' : 'none');
   }
+  const hintEl = document.getElementById('diseaseHint');
+  if(hintEl){
+    const raw = normSearch(state.diseaseQuery||'');
+    const hs = [];
+    if(raw && raw.includes(normSearch('대상포진'))) hs.push('대상포진: <b>국소</b>는 「기타 감염주의 필요 상태」, <b>파종성</b>(전신)은 「기타 공기주의」를 선택하세요.');
+    if(raw && raw.includes(normSearch('ESBL'))) hs.push('ESBL: 별도 칩 없음 → 「기타」 선택 후 감염관리팀 확인.');
+    if(raw && raw.includes(normSearch('노로'))) hs.push('노로바이러스: 별도 칩 없음 → 「기타」 선택 후 감염관리팀 확인.');
+    if(raw && raw.includes(normSearch('폐렴'))) hs.push('폐렴: 원인균·격리 종류에 따라 다름 → 원인균 칩(MRSA·독감·COVID 등) 또는 「기타」 선택 후 감염관리팀 확인.');
+    if(raw && raw.includes(normSearch('CRAB'))) hs.push('CRAB: 「MRSA / CRPA(MRPA) / MRAB」 칩(접촉주의)으로 판정합니다.');
+    hintEl.innerHTML = hs.join('<br>'); setDisp(hintEl, hs.length ? '' : 'none');
+  }
   const em = document.getElementById('diseaseEmpty');
   if(em) setDisp(em, anyVis ? 'none' : '');
   const clr = document.getElementById('diseaseSearchBtn');
@@ -1321,7 +1333,8 @@ function step2HTML(){
     <h2>감염 유형</h2>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
     ${groupsHTML}
-    <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
+    <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
+    <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없음 → 「기타」 선택 후 감염관리팀 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
   </div>
   </div>
   `;
@@ -1440,7 +1453,7 @@ function conditionsCardHTML(diseases, role, decision){
 
 /* =========================================================
    v1.16 간호직 결과 — 간호사가 궁금한 순서
-   판정 → 이동 시나리오(치료실/병실 PT) → 병실 확인·지금 할 일 → 치료 후·인계
+   판정 → 이동 시나리오(치료실/병실 PT) → 병실 확인·지금 할 일 → 치료 후(v1.44 인계 삭제)
    (판정 로직 decide()는 변경 없음, 표현만)
    ========================================================= */
 const NURSE_REASON = {
@@ -1452,7 +1465,7 @@ const NURSE_REASON = {
   scabies:'옴 접촉주의 격리기간 — 병실PT만(작업·연하·언어 불가)',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
-  vre:'VRE 접촉주의 — 가급적 병실 우선, 조건 충족 시 치료실 조건부',
+  vre:'VRE 접촉주의 — 치료실 조건부(병실 우선) · 타과 입원 환자는 병실PT만',
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 조건부',
   mrsa:'접촉주의 — 보호구·동선·소독 조건 충족 시 치료실 조건부',
   cdiff:'CDI 접촉주의(아포) — 물·비누 손위생·아포 소독 조건 충족 시 치료실 조건부',
@@ -1460,7 +1473,7 @@ const NURSE_REASON = {
   rsv:'RSV 접촉주의 — 보호구·동선·소독 조건 충족 시 치료실 조건부',
 };
 const NURSE_VERDICT = {
-  CONDITIONAL:{title:'치료실 이송 가능(조건)', cls:'banner-conditional'},
+  CONDITIONAL:{title:'치료실 이송 조건부', cls:'banner-conditional'},
   WARD_ONLY:{title:'병실PT만 — 치료실 이송·작업·연하·언어 불가', cls:'banner-ward'},
   HOLD:{title:'보류 — 확인 전 이송·치료 금지', cls:'banner-hold'},
 };
@@ -1535,29 +1548,29 @@ function nurseAfterHTML(decision, ids, diseaseLabel){
   after.push('사용 장비·접촉면 소독 확인'+(ids.includes('cdiff')?' — CDI: 1:10 락스 희석액·바이오스팟·엔지셉트플러스와입스 등 아포 유효 소독제':' (1:100 세니자임 또는 티슈형 소독제)'));
   after.push('체온계·혈압계 등 환자 전용 물품 유지');
   after.push('증상 변화·격리 해제 여부 변경 시 재활팀에 재공유');
-  const verdict = NURSE_VERDICT[decision.status].title;
-  const route = decision.status==='CONDITIONAL'?'치료실 조건부(또는 병실 PT)':decision.status==='WARD_ONLY'?'병실 PT':'보류';
-  const msg = `[재활팀 인계] ${diseaseLabel} 환자, ${decision.ppeTag} — 판정: ${verdict}, 진행: ${route}. 보호구: ${decision.ppeItems[0]}. BESTCare Alert·격리표지 확인 완료.`;
   return `
   <div class="card">
-    <div class="section-title"><span class="ico">4</span>치료 후 — 복귀·소독·인계</div>
+    <div class="section-title"><span class="ico">4</span>치료 후 — 복귀·소독</div>
     <ul class="list">${after.map(x=>`<li>${x}</li>`).join('')}</ul>
-    <p class="detail-label">재활팀 인계 참고 문구</p>
-    <div class="handoff-box" id="handoffText">${msg}</div>
   </div>`;
 }
 
 function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner){
   const ids = diseases.map(d=>d.id);
-  const v = NURSE_VERDICT[decision.status] || NURSE_VERDICT.HOLD;
-  const drivers = diseases.filter(d=>baseStatusOf(d)===decision.status);
-  const reason = drivers.map(d=>NURSE_REASON[d.id]||d.label).join(' / ');
+  let v = NURSE_VERDICT[decision.status] || NURSE_VERDICT.HOLD;
+  const symCond = decision.status==='CONDITIONAL' && diseases.some(d=>d.base==='CONDITIONAL_SYMPTOM');
+  if(symCond) v = {title:'증상 확인 후 결정', cls:'banner-symptom'};
+  const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'조건부', CONDITIONAL_SYMPTOM:'증상 확인'};
+  const reasonList = diseases.map(d=>`<li>${NURSE_REASON[d.id]||d.label}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
+  const branch = symCond ? `<div class="desc" style="margin-top:6px;">• 발열·기침 등 증상 심함 → <b>보류</b><br>• 증상 호전 + 마스크 유지 가능 → <b>치료실 조건부</b>(담당의·감염관리 확인 후)</div>` : '';
+  const maskOff = (decision.status==='CONDITIONAL' && ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) ? `<div class="desc" style="margin-top:6px;">⚠ 연하·호흡 등 마스크를 벗는 과제는 독립 공간·안면보호 필요 — 치료실에 미리 전달</div>` : '';
   const open = !!state.expandedTreat.nurseFull;
   return `
     <div class="result-banner ${v.cls}">
       <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel} · 간호직</div>
       <div class="title">${v.title}</div>
-      <div class="desc">${reason}</div>
+      <ul class="desc" style="margin:4px 0 0 18px;padding:0;">${reasonList}</ul>
+      ${branch}${maskOff}
       <div class="tag-row"><span class="tag">${decision.ppeTag}</span></div>
     </div>
 
