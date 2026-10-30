@@ -723,7 +723,7 @@ const DISEASES = [
     note:'접촉주의. 치료실 조건부 치료 우선. 한 칩에 묶인 동일 접촉주의 원칙(MRSA·MRPA·MRAB, CRPA = MRPA).'},
   {id:'vre', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
-    note:'접촉주의·다제내성균. 가급적 병실 우선·조건 충족 시 치료실 조건부·PT는 111병동재활치료실 우선배정.'},
+    note:'접촉주의·다제내성균. 가급적 병실 우선·치료실 조건부·PT는 111병동재활치료실 우선배정.'},
   {id:'cre', aliases:['CRE','CPE','카바페넴'], label:'CRE(CPE)', precaution:'contact_mdro',
     base:'WARD_ONLY_CRE',
     special:true,
@@ -836,7 +836,7 @@ function decideOne(d, part){
       break;
     case 'CONDITIONAL_ALT_WARD':
       result = {status:'CONDITIONAL', title:'치료실 치료 조건부 가능',
-        desc:'지침상 치료실 이동이 별도로 제한되지 않아 조건 충족 시 치료실 치료를 우선 진행합니다. 이동이 어렵거나 환경관리가 부담되는 경우 병실PT도 대안으로 고려할 수 있습니다.'};
+        desc:'지침상 치료실 이동이 별도로 제한되지 않아 치료실 치료를 우선 진행합니다. 이동이 어렵거나 환경관리가 부담되는 경우 병실PT도 대안으로 고려할 수 있습니다.'};
       break;
     case 'CONDITIONAL_SYMPTOM':
       result = {status:'CONDITIONAL', title:'치료실 치료 조건부 가능 (증상 확인 필요)',
@@ -1062,7 +1062,7 @@ function nurseBannerCopy(status){
   }
   return {
     title:'치료실 이송 조건부 가능',
-    desc:'조건 충족 시 치료실 이송 가능합니다(세부 감염관리 조건은 치료실에서 적용).',
+    desc:'세부 감염관리 조건은 치료실에서 적용합니다.',
   };
 }
 
@@ -1081,7 +1081,7 @@ function doctorBannerCopy(status){
   }
   return {
     title:'조건부 치료실 처방 가능',
-    desc:'조건 충족 시 치료실 처방을 참고할 수 있습니다. 파트별 제목과 실제 배정 가능 여부를 확인하세요.',
+    desc:'파트별 제목과 실제 배정 가능 여부를 확인하세요.',
   };
 }
 
@@ -1120,7 +1120,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.46';
+const APP_VERSION = 'v1.47';
 
 function headerHTML(){
   return `
@@ -1472,11 +1472,11 @@ const NURSE_REASON = {
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
   vre:'VRE 접촉주의 — 치료실 조건부(병실 우선) · 타과 입원 환자는 병실PT만',
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 치료실 이송 가능',
-  mrsa:'접촉주의 — 조건 충족 시 치료실 이송 가능',
-  cdiff:'CDI 접촉주의(아포) — 조건 충족 시 치료실 이송 가능',
+  mrsa:'접촉주의',
+  cdiff:'CDI 접촉주의(아포)',
   protective:'보호격리 — 병실 밖 이동 불가 · 병실PT만(작업·연하·언어 불가)',
-  rota_noro:'로타·노로 접촉주의 — 조건 충족 시 치료실 이송 가능',
-  rsv:'RSV 접촉주의 — 조건 충족 시 치료실 이송 가능',
+  rota_noro:'로타·노로 접촉주의',
+  rsv:'RSV 접촉주의',
 };
 const NURSE_VERDICT = {
   CONDITIONAL:{title:'치료실 이송 조건부', cls:'banner-conditional'},
@@ -1491,7 +1491,7 @@ function nurseScenarioHTML(decision, ids){
   const roomOk = s==='CONDITIONAL';
   const wardOk = s!=='HOLD';
   const roomNote = roomOk
-    ? (ids.includes('vre')?'조건 충족 시 가능 · VRE는 병실PT도 대안':'조건 충족 시 가능')
+    ? (ids.includes('vre')?'가능 · VRE는 병실PT도 대안':'가능')
     : (ids.includes('cre')?'CRE — 병실 밖으로 나오지 않음':s==='WARD_ONLY'?'현재 기준 보내지 않음':'확인 전 보류');
   const wardNote = !wardOk ? '확인 전 보류'
     : s==='WARD_ONLY' ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
