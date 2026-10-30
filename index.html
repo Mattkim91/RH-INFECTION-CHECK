@@ -675,6 +675,9 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .disease-search input::placeholder{color:#9aa4ad;}
 .disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
 .disease-search button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;cursor:pointer;}
+.ctx-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;}
+.ctx-bar-lab{font-size:13px;font-weight:700;color:#6b7680;}
+.ctx-pill{font-size:13.5px;font-weight:700;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 12px;}
 .sel-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 4px;}
 .sel-strip-lab{font-size:13.5px;font-weight:700;color:var(--navy);}
 .sel-pill{font-family:inherit;font-size:13.5px;border:1.5px solid var(--teal);background:var(--mint-bg);color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
@@ -1107,7 +1110,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.32';
+const APP_VERSION = 'v1.33';
 
 function headerHTML(){
   return `
@@ -1119,6 +1122,18 @@ function headerHTML(){
   </header>`;
 }
 
+function selectedPartLabel(){
+  if(!state.part) return '';
+  const p = PARTS.find(x=>x.id===state.part);
+  if(p) return p.label;
+  const r = STAFF_ROLES.find(x=>x.id===state.part);
+  return r ? r.label : state.part;
+}
+function contextBarHTML(){
+  const lab = selectedPartLabel();
+  if(!lab) return '';
+  return `<div class="ctx-bar" aria-label="선택 직종"><span class="ctx-bar-lab">직종</span><span class="ctx-pill">${lab}</span></div>`;
+}
 function renderWizard(){
   let body = '';
   if(state.step===1) body = step1HTML();
@@ -1132,6 +1147,7 @@ function renderWizard(){
   ${headerHTML()}
   <main>
     <div class="step-label">${state.step===1?'1. 직종':'2. 질환'}</div>
+    ${state.step>=2 ? contextBarHTML() : ''}
     ${body}
   </main>
   ${state.step===1 ? '' : `<footer class="nav">
@@ -1720,6 +1736,7 @@ function renderResult(){
   ${headerHTML()}
   <main>
     <div class="step-label">3. 결과</div>
+    ${contextBarHTML()}
     ${bodyHTML}
     <div class="disclaimer">
       본 도구는 병원 감염관리 지침을 대체하지 않으며, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
