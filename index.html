@@ -1114,7 +1114,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.36';
+const APP_VERSION = 'v1.37';
 
 function headerHTML(){
   return `
@@ -1991,6 +1991,20 @@ if('serviceWorker' in navigator){
   @media (min-width:1024px){
     .update-banner{left:auto;right:24px;top:24px;width:340px;}
   }
+
+/* v1.37 안3: 질환 목록 컴팩트 (#diseaseWrap 한정) */
+#diseaseWrap .card{padding:14px 14px 12px;margin-bottom:10px;}
+#diseaseWrap .card h2{font-size:17px;margin-bottom:2px;}
+#diseaseWrap .card .hint{font-size:14px;margin-bottom:6px;}
+#diseaseWrap .radio-list{gap:5px;}
+#diseaseWrap .radio-row{padding:8px 11px;gap:9px;min-height:40px;align-items:center;border-radius:10px;}
+#diseaseWrap .radio-row .box{margin-top:0;}
+#diseaseWrap .radio-row .txt{font-size:14px;line-height:1.3;}
+#diseaseWrap .radio-row .txt small{font-size:12.5px;margin-top:1px;}
+#diseaseWrap .subgroup-title{font-size:12.5px;margin:10px 0 5px;}
+#diseaseWrap .subgroup-title:first-child{margin-top:0;}
+@media (min-width:768px){#diseaseWrap .radio-row{padding:9px 12px;}#diseaseWrap .card{padding:16px 18px 14px;}}
+#diseaseWrap.dz-searching .card{padding:0;margin:0 0 4px;}
 </style>
 </body>
 </html>
