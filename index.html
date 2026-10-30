@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>재활감염 Quick Check</title>
 <meta name="description" content="치료 전 30초 감염관리 체크 · 재활치료 현장 참고용 도구">
 <meta name="theme-color" content="#0F2A47">
@@ -64,6 +64,7 @@
     max-width:520px;
     margin:0 auto;
     min-height:100vh;
+    min-height:100dvh;
     background:var(--bg);
   }
   header.top{
@@ -506,6 +507,11 @@
   }
   .accordion-item.open .accordion-body{display:block;}
 
+
+  /* Short landscape (phone sideways): free vertical space */
+  @media (orientation:landscape) and (max-height:500px){
+    header.top{position:static;}
+  }
   /* ===== Responsive scaling: phone -> tablet -> PC ===== */
 
   /* Phones in landscape / small tablets */
@@ -514,6 +520,7 @@
     .app{
       box-shadow:0 0 40px rgba(15,42,71,0.08);
       min-height:100vh;
+      min-height:100dvh;
     }
   }
 
@@ -522,6 +529,7 @@
     body{
       padding:28px 16px 40px;
       min-height:100vh;
+      min-height:100dvh;
     }
     .app{
       max-width:680px;
@@ -1083,7 +1091,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.25';
+const APP_VERSION = 'v1.26';
 
 function headerHTML(){
   return `
