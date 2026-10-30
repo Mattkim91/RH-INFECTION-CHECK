@@ -348,6 +348,11 @@
   .scenario{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
   .scenario-off{opacity:.6;}
   .sc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:15.5px;margin-bottom:8px;}
+  .rx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+  .rx-cell{background:#fff;border-radius:10px;padding:10px 12px;border:2px solid var(--line);color:#1a1a1a;}
+  .rx-cell.pill-conditional{border-color:#2E9E5B;} .rx-cell.pill-ward{border-color:#E08A00;} .rx-cell.pill-hold{border-color:#C62828;}
+  .rx-part{font-size:15px;font-weight:700;} .rx-verdict{font-size:17px;font-weight:800;margin-top:2px;}
+  .rx-cell.pill-conditional .rx-verdict{color:#1F7A44;} .rx-cell.pill-ward .rx-verdict{color:#B36B00;} .rx-cell.pill-hold .rx-verdict{color:#C62828;}
   .handoff-box{background:#F5F7FA;border:1px dashed var(--line);border-radius:10px;padding:10px;font-size:14px;line-height:1.5;margin-bottom:8px;}
   .btn-copy{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:14.5px;cursor:pointer;}
   .info-note b{display:block;font-size:15px;margin-bottom:4px;}
@@ -968,7 +973,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.17';
+const APP_VERSION = 'v1.18';
 
 function headerHTML(){
   return `
@@ -1158,7 +1163,7 @@ function buildConditions(diseases, role, decision){
     const parts=(decision.perPart||[]).filter(x=>x.result.status==='CONDITIONAL').map(x=>x.part.label.split('(')[0].trim());
     if(parts.length) hint='조건부 파트: '+parts.join(' · ');
   }
-  return {core, extras, title, intro, hint, source:'출처: 내부 운영참고서 치료실 조건부 치료 조건 · 중앙 「재활치료실 감염관리」와 함께 적용'};
+  return {core, extras, title, intro, hint};
 }
 function conditionsCardHTML(diseases, role, decision){
   const show = role==='doctor'
@@ -1366,47 +1371,61 @@ function renderResult(){
   if(decision.role==='doctor'){
     const meta = STATUS_META[decision.status];
     const banner = doctorBannerCopy(decision.status);
-    const partRows = decision.perPart.map(({part,result})=>{
-      return `
+    const PLACE = {CONDITIONAL:'치료실 처방 가능(조건부)', WARD_ONLY:'병실처방', HOLD:'처방 보류'};
+    const short = p=>p.label.split('(')[0].trim()==='연하치료'?'연하치료(SW)':p.label.split('(')[0].trim();
+    const grid = decision.perPart.map(({part,result})=>{
+      const pill = STATUS_PILL[result.status] || STATUS_PILL.HOLD;
+      return `<div class="rx-cell ${pill.cls}"><div class="rx-part">${short(part)}</div><div class="rx-verdict">${PLACE[result.status]||pill.label}</div></div>`;
+    }).join('');
+    const reasons = decision.perPart.map(({part,result})=>`
       <div class="part-status-row">
         ${statusPillHTML(result.status)}
-        <div class="txt">
-          <b>${part.label}</b>
-          <small>${result.title}</small>
-        </div>
-      </div>`;
-    }).join('');
-    const summaryBits = decision.perPart.map(({part,result})=>{
-      const pill = STATUS_PILL[result.status] || STATUS_PILL.HOLD;
-      const short = part.label.split('(')[0].trim();
-      return `${short} ${pill.label}`;
-    }).join(' · ');
+        <div class="txt"><b>${short(part)}</b><small>${result.title}</small></div>
+      </div>`).join('');
+    const groups = {CONDITIONAL:[],WARD_ONLY:[],HOLD:[]};
+    decision.perPart.forEach(({part,result})=>{ (groups[result.status]||groups.HOLD).push(short(part)); });
+    const memoBits = [];
+    if(groups.CONDITIONAL.length) memoBits.push(`${groups.CONDITIONAL.join('·')} 치료실 조건부`);
+    if(groups.WARD_ONLY.length) memoBits.push(`${groups.WARD_ONLY.join('·')} 병실치료`);
+    if(groups.HOLD.length) memoBits.push(`${groups.HOLD.join('·')} 보류`);
+    const memo = `[감염] ${diseaseLabel} (${decision.ppeTag}) — ${memoBits.join(', ')}. EMR Alert·격리상태 확인 후 진행 부탁드립니다.`;
+    if(state.expandedTreat.docPpe===undefined) state.expandedTreat.docPpe = false;
+    const ppeOpen = !!state.expandedTreat.docPpe;
 
     bodyHTML = `
-    <div class="result-banner ${meta.cls}">
-      <div class="kicker">처방 참고 · ${diseaseLabel} · 의사직</div>
-      <div class="title">${banner.title}</div>
-      <div class="desc">${banner.desc}</div>
-      <div class="tag-row">
-        <span class="tag">${decision.ppeTag}</span>
-      </div>
-    </div>
-
     ${tbBanner}
     ${cdiffBanner}
-    ${conditionsCardHTML(diseases, decision.role==='doctor'?'doctor':decision.role==='nurse'?'nurse':'therapy', decision)}
 
-    <div class="card">
-      <div class="section-title"><span class="ico">1</span>파트별 가능 여부</div>
-      <p class="hint" style="margin-top:0;">한눈에 보기: ${summaryBits}</p>
-      <div class="part-status-list">${partRows}</div>
+    <div class="result-banner ${meta.cls}">
+      <div class="kicker">처방 판정 · ${diseaseLabel} · 의사직</div>
+      <div class="title">${banner.title}</div>
+      <div class="rx-grid">${grid}</div>
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="ico">2</span>보호구</div>
-      <ul class="list">
-        ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
-      </ul>
+      <div class="section-title"><span class="ico">1</span>왜 이렇게 처방하나</div>
+      <div class="part-status-list">${reasons}</div>
+      <p class="hint">${banner.desc}</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="ico">2</span>처방 메모 (재활팀 전달)</div>
+      <div class="handoff-box" id="doctorMemoText">${memo}</div>
+      <button class="btn ghost" id="btnCopyDoctorMemo" type="button">📋 처방 메모 복사</button>
+    </div>
+
+    ${conditionsCardHTML(diseases, 'doctor', decision)}
+
+    <div class="card">
+      <div class="accordion-item ${ppeOpen?'open':''}">
+        <div class="accordion-header" data-accordion="docPpe">
+          <span>보호구·환경 (참고)</span>
+          <span class="chev">▾</span>
+        </div>
+        <div class="accordion-body">
+          <ul class="list">${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}</ul>
+        </div>
+      </div>
     </div>
 
     ${verifyGuideHTML(decision)}
@@ -1500,6 +1519,12 @@ function bindResultEvents(){
   if(cp) cp.onclick = ()=>{
     const t = (document.getElementById('handoffText')||{}).innerText||'';
     const done = ()=>{ cp.textContent='✓ 복사됨'; setTimeout(()=>{cp.textContent='📋 인계 문구 복사';},1500); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>{});
+  };
+  const cd = document.getElementById('btnCopyDoctorMemo');
+  if(cd) cd.onclick = ()=>{
+    const t = (document.getElementById('doctorMemoText')||{}).innerText||'';
+    const done = ()=>{ cd.textContent='✓ 복사됨'; setTimeout(()=>{cd.textContent='📋 처방 메모 복사';},1500); };
     if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>{});
   };
   document.getElementById('btnPrev').onclick = ()=>{ state.step=2; render(); window.scrollTo(0,0); };
