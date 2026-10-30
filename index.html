@@ -1125,7 +1125,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.50';
+const APP_VERSION = 'v1.51';
 
 function headerHTML(){
   return `
@@ -1337,7 +1337,7 @@ function step2HTML(){
     <div class="disease-count" id="diseaseCount" style="display:none"></div>
   <div id="diseaseWrap">
   <div class="card">
-    <h2>감염 유형</h2>
+    <h2>감염 유형 <span style="font-size:.72em;font-weight:600;color:#64748B;">(중복선택 가능)</span></h2>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
     ${groupsHTML}
     <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
