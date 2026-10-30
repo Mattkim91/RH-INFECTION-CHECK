@@ -742,7 +742,7 @@ const DISEASES = [
     note:'접촉주의. 치료실 조건부 치료 우선. 한 칩에 묶인 동일 접촉주의 원칙(MRSA·MRPA·MRAB, CRPA = MRPA).'},
   {id:'vre', short:'VRE', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
-    note:'접촉주의·다제내성균. 가급적 병실 우선·치료실 조건부·PT는 111병동재활치료실 우선배정.'},
+    note:'접촉주의·다제내성균. RH 입원: PT·OT·ST·SW 모두 독립 치료실 가능(PT는 111병동재활치료실 우선, 운동치료실은 기능 수준에 따라 문의·컨펌 후). 타과 입원: PT만 병실(침상) 치료, 작업·연하·언어 미시행.'},
   {id:'cre', short:'CRE', aliases:['CRE','CPE','카바페넴'], label:'CRE(CPE)', precaution:'contact_mdro',
     base:'WARD_ONLY_CRE',
     special:true,
@@ -829,11 +829,12 @@ const state = {
   diseases:[],
   diseaseQuery:'',
   expandedTreat:{},
+  admit:null, // v1.66: VRE 입원 구분 'rh' | 'other' | null
 };
 
 function resetState(){
   state.step=1; state.part=null;
-  state.diseases=[]; state.diseaseQuery=''; state.expandedTreat={};
+  state.diseases=[]; state.diseaseQuery=''; state.expandedTreat={}; state.admit=null;
   render();
   window.scrollTo(0,0);
 }
@@ -847,8 +848,30 @@ function decideOne(d, part){
   const hasWard = part ? part.ward : false;
 
   let result;
+  let base = d.base;
+  /* v1.66: VRE는 입원 구분(RH/타과)에 따라 판정 */
+  if(d.id==='vre'){
+    const pid = part ? part.id : null;
+    if(state.admit==='rh'){
+      result = pid==='pt'
+        ? {status:'CONDITIONAL', title:'치료실 치료 조건부 가능 (VRE · RH 입원)',
+           desc:'RH 입원 VRE 환자는 치료실 치료가 가능합니다. 111병동재활치료실을 우선 배정하며, 운동치료실은 기능 수준에 따라 문의·컨펌 후 이용할 수 있습니다.'}
+        : {status:'CONDITIONAL', title:'치료실 치료 조건부 가능 (VRE · RH 입원)',
+           desc:'RH 입원 VRE 환자는 독립된 치료공간(작업치료실·언어치료실 등)에서 치료실 치료가 가능합니다.'};
+    }else if(state.admit==='other'){
+      result = pid==='pt'
+        ? {status:'WARD_ONLY', title:'병실PT만 가능 (VRE · 타과 입원)',
+           desc:'타과 입원 VRE 환자는 물리치료사가 환자 병실(침상)로 직접 방문하는 병실PT만 시행합니다. 치료실 이송은 하지 않습니다.'}
+        : {status:'HOLD', title:'치료 미시행 (VRE · 타과 입원)',
+           desc:'타과 입원 VRE 환자는 현재 원칙상 이 파트에서 치료를 시행하지 않습니다(확인 전 원칙). 격리해제를 기다리는 보류가 아니라 구조적 미수용입니다. 필요 시 담당의·감염관리팀과 확인합니다.'};
+    }else{
+      result = {status:'HOLD', title:'입원 구분 확인 필요 (VRE)',
+        desc:'VRE는 RH 입원/타과 입원에 따라 치료 장소가 다릅니다. 입원 구분을 먼저 확인하세요.'};
+    }
+    base = null;
+  }
 
-  switch(d.base){
+  if(base) switch(base){
     case 'CONDITIONAL':
       result = {status:'CONDITIONAL', title:'치료실 치료 조건부 가능',
         desc:'지침상 치료실 이동이 제한되지 않습니다. 보호구, 시간·공간 분리, 장비 제한, 치료 후 소독 조건을 충족하면 치료실(운동치료실·작업치료실·언어치료실)에서 우선 진행합니다.'};
@@ -898,7 +921,23 @@ function decideOne(d, part){
   // 치료 장소 세부 안내
   const loc = [];
 
-  if(result.status==='WARD_ONLY'){
+  if(d.id==='vre'){
+    const pid = part ? part.id : null;
+    if(state.admit==='rh'){
+      if(pid==='pt'){
+        loc.push('111병동재활치료실에 우선 배정합니다.');
+        loc.push('운동치료실(1층)은 기능 수준에 따라 문의·컨펌 후 이용할 수 있습니다.');
+      }else if(part){
+        loc.push(`${part.label}는 독립된 치료공간에서 치료실 치료가 가능합니다(VRE · RH 입원).`);
+      }
+      loc.push('다른 환자와 치료시간·동선을 분리하고, 치료 후 접촉면·장비를 소독합니다.');
+    }else if(state.admit==='other'){
+      if(pid==='pt') loc.push('환자 병실(침상)로 직접 방문해 병실PT로 진행합니다. 치료실 이송은 하지 않습니다.');
+      else loc.push('타과 입원 VRE는 이 파트에서 미시행입니다(확인 전 원칙 · 격리해제 대기 보류 아님).');
+    }else{
+      loc.push('입원 구분(RH/타과) 확인 전까지 치료를 시작하지 않습니다.');
+    }
+  }else if(result.status==='WARD_ONLY'){
     if(hasWard){
       loc.push('병실방문치료 프로그램을 통해 병실에서만 치료를 진행합니다. 치료실(운동치료실 등) 이동은 하지 않습니다.');
       if(d.id==='tb') loc.push('항결핵제 투여 2주 이상 및 전염성 감소(증상·객담검사 결과 포함) 확인 시, 병실치료 유지 또는 치료실 치료 전환 가능 여부를 담당의·감염관리팀과 함께 재평가합니다.');
@@ -919,10 +958,7 @@ function decideOne(d, part){
       if(d.id==='tb') loc.push('항결핵제 투여 2주 이상 및 전염성 감소(증상·객담검사 결과 포함) 확인 시, 치료실 치료 재개 가능 여부를 담당의·감염관리팀과 함께 재평가합니다.');
     }
   }else if(result.status==='CONDITIONAL'){
-    if(d.id==='vre' && part && part.id==='pt'){
-      loc.push('타과입원환자: 병실물리치료만 시행합니다.');
-      loc.push('재활입원환자: 111병동재활치료실에 우선적으로 배정하며, 기능 수준에 따라 필요한 경우 1층 운동치료실로 배정합니다.');
-    }else if(hasWard){
+    if(hasWard){
       loc.push('운동치료실에서 다른 환자와의 시간적·공간적 접촉을 최소화하여 치료를 진행합니다. 이동이 어렵거나 치료실 환경관리가 충분하지 않은 경우에는 병실PT도 대안으로 고려할 수 있습니다.');
     }else{
       loc.push(`${part.label}는 병실방문치료 프로그램을 운영하지 않으므로, 치료실 내원이 허용된 경우 독립된 치료공간에서 시행합니다.`);
@@ -976,6 +1012,7 @@ function decideForPart(diseases, part){
 
 // 질환의 기본 등급만 간단히 산출 (파트 무관 — 병동 요약용, 세부 치료실 배정 로직 없이 참고 수준)
 function baseStatusOf(d){
+  if(d.id==='vre') return state.admit==='rh' ? 'CONDITIONAL' : (state.admit==='other' ? 'WARD_ONLY' : 'HOLD');
   if(d.base.indexOf('HOLD')===0) return 'HOLD';
   if(d.base.indexOf('WARD_ONLY')===0) return 'WARD_ONLY';
   return 'CONDITIONAL';
@@ -1139,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.65';
+const APP_VERSION = 'v1.66';
 
 function headerHTML(){
   return `
@@ -1177,7 +1214,7 @@ function renderWizard(){
 
   const canNext =
     (state.step===1 && state.part) ||
-    (state.step===2 && state.diseases.length>0);
+    (state.step===2 && diseasesReady());
 
   return `
   ${headerHTML()}
@@ -1194,6 +1231,23 @@ function renderWizard(){
   `;
 }
 
+function diseasesReady(){
+  return state.diseases.length>0 && (!state.diseases.includes('vre') || !!state.admit);
+}
+function admitRowHTML(){
+  if(!state.diseases.includes('vre')) return '';
+  const c=(id,lab)=>`<button type="button" class="chip ${state.admit===id?'sel':''}" data-admit="${id}" aria-pressed="${state.admit===id}">${lab}</button>`;
+  return `<div class="ctx-bar-lab" style="margin:8px 0 6px;">입원 구분 <span style="font-weight:600;color:#b45309;">(VRE 필수)</span></div><div class="chip-grid">${c('rh','RH 입원')}${c('other','타과 입원')}</div>`;
+}
+function renderAdmitRow(){
+  const el = document.getElementById('admitRow');
+  if(!el) return;
+  el.innerHTML = admitRowHTML();
+  setDisp(el, state.diseases.includes('vre') ? '' : 'none');
+  Array.from(el.querySelectorAll('[data-admit]')||[]).forEach(b=>{
+    b.onclick=()=>{ state.admit=b.dataset.admit; renderAdmitRow(); const n=document.getElementById('btnNext'); if(n) n.disabled=!diseasesReady(); };
+  });
+}
 function footLineHTML(){
   return `<div class="app-badge">지침 기준: 재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) · 참고용 · 최종판단은 담당의/감염관리팀<span class="offline-badge" id="offlineBadge" style="display:${(typeof navigator!=='undefined' && navigator.onLine===false)?'inline-block':'none'}">오프라인 · 마지막 앱 ${APP_VERSION}</span></div>`;
 }
@@ -1307,11 +1361,13 @@ function syncDiseaseRow(id){
     if(el.setAttribute) el.setAttribute('aria-checked', String(on));
   });
   const next = document.getElementById('btnNext');
-  if(next) next.disabled = state.diseases.length===0;
+  if(next) next.disabled = !diseasesReady();
 }
 function toggleDisease(id, forceOn){
   const i = state.diseases.indexOf(id);
   if(i===-1) state.diseases.push(id); else if(!forceOn) state.diseases.splice(i,1);
+  if(!state.diseases.includes('vre')) state.admit=null;
+  renderAdmitRow();
   syncDiseaseRow(id);
   filterDiseaseRows();
 }
@@ -1355,6 +1411,7 @@ function step2HTML(){
   <div class="card">
     <h2>감염 유형 <span style="font-size:.72em;font-weight:600;color:#64748B;">(중복선택 가능)</span></h2>
     <div class="sel-strip" id="selStrip"><span class="sel-strip-lab">선택됨:</span> <span class="sel-strip-empty">없음</span></div>
+    <div id="admitRow" aria-label="입원 구분" style="${state.diseases.includes('vre')?'':'display:none'}">${admitRowHTML()}</div>
     ${groupsHTML}
     <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
     <div class="disease-empty" id="diseaseEmpty" style="display:none">질환 목록에 없습니다.<br>기타 선택 후 필요한 부분은 감염관리팀에 문의해주세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타 선택</button></div>
@@ -1371,6 +1428,7 @@ function bindWizardEvents(){
     el.onclick=()=>toggleDisease(el.dataset.disease);
     el.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); toggleDisease(el.dataset.disease); } };
   });
+  renderAdmitRow();
   const po = document.getElementById('btnPickOther');
   if(po) po.onclick=()=>{
     state.diseaseQuery='';
@@ -1390,6 +1448,7 @@ function bindWizardEvents(){
   const next = document.getElementById('btnNext');
   if(next) next.onclick=()=>{
     if(next.disabled) return;
+    if(state.step===2 && !diseasesReady()) return;
     goStep(state.step+1);
   };
 }
@@ -1432,7 +1491,7 @@ function buildConditions(diseases, role, decision){
   ];
   const extras = [];
   if(ids.some(i=>i==='mrsa'||i==='cdiff')) extras.push('접촉주의 환자는 위 공통 조건을 충족할 때 치료실 조건부 치료를 시행할 수 있다.');
-  if(ids.includes('vre')) extras.push('VRE: 이동이 어렵거나 치료실 환경관리가 부담되면 병실PT도 대안으로 고려한다.');
+  if(ids.includes('vre')) extras.push(state.admit==='other'?'VRE(타과 입원): PT만 병실(침상) 치료, 작업·연하·언어 미시행.':'VRE(RH 입원): PT는 111병동재활치료실 우선, 운동치료실은 문의·컨펌 후. OT·ST·SW는 독립 치료실.');
   if(ids.includes('flu')) extras.push('독감: 발열·호흡기 증상이 심하면 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실 또는 치료실 조건부 진행.');
   if(ids.includes('rota_noro')) extras.push('로타·노로: 손위생은 가급적 물과 비누(노로는 알코올 효과 낮을 수 있음), 접촉면·장비 소독.');
   if(ids.includes('cdiff')) extras.push('C. difficile: 손위생은 가급적 물과 비누, 아포 유효 소독제(1:10 락스·바이오스팟·엔지셉트플러스와입스 등)로 접촉면·장비 소독.');
@@ -1491,7 +1550,7 @@ const NURSE_REASON = {
   scabies:'옴 접촉주의 격리기간 — 병실PT만(작업·연하·언어 불가)',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
-  vre:'VRE 접촉주의 — 병실PT만 (RH환자만 치료실 이송 가능)',
+  vre:(state.admit==='other'?'VRE 접촉주의 · 타과 입원 — 병실PT만(작업·연하·언어 미시행)':state.admit==='rh'?'VRE 접촉주의 · RH 입원 — 치료실 이송 가능(PT 111 우선)':'VRE 접촉주의 — RH/타과 입원 구분 필요'),
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 치료실 이송 가능',
   mrsa:'접촉주의',
   cdiff:'CDI 접촉주의(아포)',
@@ -1514,6 +1573,10 @@ function precIconHTML(tag){
   const icons=[];Object.keys(IC).forEach(k=>{if(String(tag||'').indexOf(k)>-1)icons.push(IC[k]);});
   return icons.length?`<span class="tag prec-icon" title="${tag}" aria-label="${tag}">${icons.join(' ')}</span>`:'';
 }
+function nurseReason(d){
+  if(d.id==='vre') return state.admit==='other'?'VRE 접촉주의 · 타과 입원 — 병실PT만(작업·연하·언어 미시행)':state.admit==='rh'?'VRE 접촉주의 · RH 입원 — 치료실 이송 가능(PT 111 우선)':'VRE 접촉주의 — RH/타과 입원 구분 필요';
+  return NURSE_REASON[d.id]||d.label;
+}
 const NURSE_VERDICT = {
   CONDITIONAL:{title:'치료실 이송 가능', cls:'banner-conditional'},
   WARD_ONLY:{title:'병실PT만 · 치료실 불가 — 작업·연하·언어 불가', cls:'banner-ward'},
@@ -1527,7 +1590,7 @@ function nurseCondLines(ids){
   if(ids.includes('flu')) L.push('독감: 발열·기침이 호전되고 마스크 유지가 되면 치료실 진행');
   if(ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) L.push('이동 중 환자 마스크 착용 · 마스크 벗는 과제(연하 등)는 독립 공간에서 진행');
   if(ids.includes('cdiff')||ids.includes('rota_noro')) L.push((ids.includes('cdiff')?'CDI':'로타·노로')+': 치료실은 물·비누 손위생과 접촉면·장비 소독으로 운영');
-  if(ids.includes('vre')) L.push('VRE: 병실PT만 · RH환자만 치료실 이송 가능');
+  if(ids.includes('vre')) L.push(state.admit==='other'?'VRE(타과 입원): 병실PT만 · 작업·연하·언어 미시행':'VRE(RH 입원): PT 111 우선(운동치료실 문의·컨펌) · OT·ST·SW 독립 치료실');
   L.push('다른 환자와 시간·공간 분리(가급적 마지막 시간대), 치료 후 소독은 치료실에서 진행');
   return L.slice(0,4);
 }
@@ -1535,12 +1598,13 @@ function nurseScenarioHTML(decision, ids){
   // v1.46: 간호 화면은 「보낼지」만 — 보호구·동선·소독 등 치료실 몫은 치료직 화면에서
   // v1.62/v1.64: VRE·WARD_ONLY는 병실PT를 위 · 치료실을 아래
   const s = decision.status;
-  const isVre = s==='CONDITIONAL' && ids.includes('vre');
+  const isVre = false; // v1.66: VRE는 입원 구분으로 일반 판정 경로 사용
+  const vreOther = s==='WARD_ONLY' && ids.includes('vre') && state.admit==='other';
   const roomOk = s==='CONDITIONAL';
   const wardOk = s!=='HOLD';
   const roomNote = isVre ? 'RH환자만 치료실 이송 가능'
     : roomOk ? '가능'
-    : (ids.includes('cre')?'CRE — 병실 밖으로 나오지 않음':s==='WARD_ONLY'?'현재 기준 보내지 않음':'확인 전 보류');
+    : (ids.includes('cre')?'CRE — 병실 밖으로 나오지 않음':vreOther?'타과 입원 VRE — 치료실 이송 불가':s==='WARD_ONLY'?'현재 기준 보내지 않음':'확인 전 보류');
   const wardNote = !wardOk ? '확인 전 보류'
     : (isVre || s==='WARD_ONLY') ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
   const roomPill = isVre ? '제한사항' : (roomOk?'이송 가능':(s==='HOLD'?'보류':'불가'));
@@ -1561,12 +1625,16 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const symCond = decision.status==='CONDITIONAL' && diseases.some(d=>d.base==='CONDITIONAL_SYMPTOM');
   /* v1.55: 독감도 「치료실 이송 가능」 + 증상 한 줄 */
   const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'치료실 가능', CONDITIONAL_SYMPTOM:'증상 확인'};
-  const reasonList = diseases.map(d=>`<li>${NURSE_REASON[d.id]||d.label}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
+  const reasonList = diseases.map(d=>`<li>${nurseReason(d)}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
   /* v1.58/v1.64: VRE 병실PT만 + RH 예외 · 배너는 ward 톤 · tip 「단,」 없음 */
-  const vreTitle = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? '병실PT만' : null;
+  const vreTitle = null; // v1.66: 구 「병실PT만 + RH만」 배너 폐기
   const tipColor = vreTitle ? 'margin-top:6px;color:#fff;font-weight:600;opacity:.95;' : 'margin-top:6px;color:#b45309;font-weight:600;';
   const branch = symCond ? `<div class="amber-note" style="${tipColor}">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
-  const vreTip = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? `<div class="amber-note" style="${tipColor}">RH환자만 치료실 이송 가능</div>` : '';
+  let vreTip = '';
+  if(ids.includes('vre')){
+    if(decision.status==='CONDITIONAL' && state.admit==='rh') vreTip = `<div class="amber-note" style="${tipColor}">RH 입원 · PT 111 우선(운동치료실 문의·컨펌) · OT·ST·SW 독립 치료실</div>`;
+    else if(decision.status==='WARD_ONLY' && state.admit==='other') vreTip = `<div class="amber-note" style="margin-top:6px;color:#fff;font-weight:600;opacity:.95;">타과 입원 · OT·ST·SW 미시행</div>`;
+  }
   let driver = '';
   if(diseases.length>1 && decision.status!=='CONDITIONAL'){
     const dd = diseases.filter(d=>baseStatusOf(d)===decision.status);
@@ -1664,7 +1732,7 @@ function renderResult(){
     if(state.expandedTreat.docPpe===undefined) state.expandedTreat.docPpe = false;
     const ppeOpen = !!state.expandedTreat.docPpe;
     /* v1.65: 전체 보류(HOLD)일 때 VRE RH 이송 tip 숨김 — 조건부일 때만 표시 */
-    const showVreTip = diseases.some(d=>d.id==='vre') && decision.status==='CONDITIONAL';
+    const showVreTip = diseases.some(d=>d.id==='vre') && decision.status==='CONDITIONAL' && state.admit==='rh';
 
     bodyHTML = `
     ${tbBanner}
@@ -1681,7 +1749,7 @@ function renderResult(){
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
       <div class="part-status-list">${reasons}</div>
       ${docSym?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
-      ${showVreTip?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 병실PT만 · RH환자만 치료실 이송 가능</div>':''}
+      ${showVreTip?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ RH 입원 · 치료실 가능(PT 111 우선 · 운동치료실 문의·컨펌)</div>':''}
       <p class="hint">${banner.desc}</p>
     </div>
 
@@ -1772,7 +1840,7 @@ function renderResult(){
   return `
   ${headerHTML()}
   <main>
-    <div class="step-label step-label-row">3. 결과${selectedPartLabel()?`<span class="ctx-pill" aria-label="선택 직종">${selectedPartLabel()}</span>`:''}</div>
+    <div class="step-label step-label-row">3. 결과${selectedPartLabel()?`<span class="ctx-pill" aria-label="선택 직종">${selectedPartLabel()}</span>`:''}${(state.diseases.includes('vre')&&state.admit)?`<span class="ctx-pill" aria-label="입원 구분">${state.admit==='rh'?'RH 입원':'타과 입원'}</span>`:''}</div>
     ${bodyHTML}
     <div class="disclaimer">
       본 도구는 병원 감염관리 지침을 대체하지 않으며, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
