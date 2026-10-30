@@ -1139,7 +1139,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.61';
+const APP_VERSION = 'v1.62';
 
 function headerHTML(){
   return `
@@ -1531,17 +1531,24 @@ function nurseCondLines(ids){
 }
 function nurseScenarioHTML(decision, ids){
   // v1.46: 간호 화면은 「보낼지」만 — 보호구·동선·소독 등 치료실 몫은 치료직 화면에서
+  // v1.62: VRE는 병실PT(이용 가능)를 위 · 치료실(제한사항·RH환자만)을 아래
   const s = decision.status;
+  const isVre = s==='CONDITIONAL' && ids.includes('vre');
   const roomOk = s==='CONDITIONAL';
   const wardOk = s!=='HOLD';
-  const roomNote = roomOk
-    ? (ids.includes('vre')?'단, RH환자만 치료실 이송 가능':'가능')
+  const roomNote = isVre ? 'RH환자만 치료실 이송 가능'
+    : roomOk ? '가능'
     : (ids.includes('cre')?'CRE — 병실 밖으로 나오지 않음':s==='WARD_ONLY'?'현재 기준 보내지 않음':'확인 전 보류');
   const wardNote = !wardOk ? '확인 전 보류'
-    : s==='WARD_ONLY' ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
+    : (isVre || s==='WARD_ONLY') ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
+  const roomPill = isVre ? '제한사항' : (roomOk?'이송 가능':(s==='HOLD'?'보류':'불가'));
+  const roomPillCls = isVre ? 'pill-conditional' : (roomOk?'pill-conditional':'pill-hold');
+  const wardPill = isVre ? '이용 가능' : (wardOk?(s==='WARD_ONLY'?'가능':'대안'):'보류');
+  const roomBlock = `<div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomPillCls}">${roomPill}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>`;
+  const wardBlock = `<div class="scenario ${wardOk?'':'scenario-off'}"><div class="sc-head">🛏 병실PT <span class="status-pill ${wardOk?'pill-ward':'pill-hold'}">${wardPill}</span></div><p class="hint" style="margin:0;">${wardNote}</p></div>`;
+  const blocks = isVre ? (wardBlock + roomBlock) : (roomBlock + wardBlock);
   return `<div class="card"><div class="section-title"><span class="ico">2</span>어디서 치료하나</div>
-    <div class="scenario ${roomOk?'':'scenario-off'}"><div class="sc-head">🚶 치료실 <span class="status-pill ${roomOk?'pill-conditional':'pill-hold'}">${roomOk?'이송 가능':(s==='HOLD'?'보류':'불가')}</span></div><p class="hint" style="margin:0;">${roomNote}</p></div>
-    <div class="scenario ${wardOk?'':'scenario-off'}"><div class="sc-head">🛏 병실PT <span class="status-pill ${wardOk?'pill-ward':'pill-hold'}">${wardOk?(s==='WARD_ONLY'?'가능':'대안'):'보류'}</span></div><p class="hint" style="margin:0;">${wardNote}</p></div>
+    ${blocks}
   </div>`;
 }
 
