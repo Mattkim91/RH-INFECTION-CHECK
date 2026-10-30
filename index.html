@@ -1116,7 +1116,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.41';
+const APP_VERSION = 'v1.42';
 
 function headerHTML(){
   return `
@@ -1212,6 +1212,7 @@ function step1HTML(){
 const PRECAUTION_GROUPS = [
   {title:'접촉주의', keys:['contact','contact_mdro','contact_cdiff']},
   {title:'비말주의', keys:['droplet','droplet_contact']},
+  {title:'공기주의', keys:['airborne']},
   {title:'보호격리', keys:['protective']},
   {title:'기타', keys:['unclear']}
 ];
@@ -1237,10 +1238,8 @@ function filterDiseaseRows(){
     const prev = list.previousElementSibling;
     if(prev && prev.classList && prev.classList.contains('subgroup-title')) setDisp(prev, vis ? '' : 'none');
   });
-  const sc = document.getElementById('specialCard');
   let anyVis = false;
   Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{ if(isVis(el)) anyVis=true; });
-  if(sc){ setDisp(sc, Array.from(sc.querySelectorAll('.radio-row[data-disease]')||[]).some(r=>isVis(r)) ? '' : 'none'); }
   const wrap = document.getElementById('diseaseWrap');
   if(wrap) wrap.classList.toggle('dz-searching', q);
   const cnt = document.getElementById('diseaseCount');
@@ -1290,7 +1289,7 @@ function step2HTML(){
     const list = [];
     g.keys.forEach(key=>{
       coveredKeys.push(key);
-      DISEASES.filter(d=>d.precaution===key && !d.special).forEach(d=>list.push(d));
+      DISEASES.filter(d=>d.precaution===key).forEach(d=>list.push(d));
     });
     if(list.length===0) return '';
     const rows = list.map(d=>`
@@ -1304,7 +1303,7 @@ function step2HTML(){
       <div class="radio-list">${rows}</div>
     `;
   }).join('') + (()=>{
-    const leftover = DISEASES.filter(d=>!d.special && !coveredKeys.includes(d.precaution));
+    const leftover = DISEASES.filter(d=>!coveredKeys.includes(d.precaution));
     if(leftover.length===0) return '';
     const rows = leftover.map(d=>`
       <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
@@ -1315,14 +1314,6 @@ function step2HTML(){
     return `<div class="subgroup-title">기타</div><div class="radio-list">${rows}</div>`;
   })();
 
-  const specialList = DISEASES.filter(d=>d.special);
-  const specialRows = specialList.map(d=>`
-    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
-      <div class="box"></div>
-      <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
-    </div>
-  `).join('');
-
   return `
     <div class="disease-count" id="diseaseCount" style="display:none"></div>
   <div id="diseaseWrap">
@@ -1331,12 +1322,6 @@ function step2HTML(){
     <div class="sel-strip" id="selStrip" style="display:none"></div>
     ${groupsHTML}
     <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
-  </div>
-
-  <div class="card" id="specialCard">
-    <h2>특별 관리가 필요한 감염</h2>
-    <p class="hint">격리 단계(유지 중 / 요건 충족 후)에 따라 치료 가능 여부가 달라지는 질환입니다.</p>
-    <div class="radio-list">${specialRows}</div>
   </div>
   </div>
   `;
