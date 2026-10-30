@@ -1125,7 +1125,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.57';
+const APP_VERSION = 'v1.58';
 
 function headerHTML(){
   return `
@@ -1475,7 +1475,7 @@ const NURSE_REASON = {
   scabies:'옴 접촉주의 격리기간 — 병실PT만(작업·연하·언어 불가)',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
-  vre:'VRE 접촉주의 — 재활의학과 입원만 111병동재활치료실(필요 시 운동치료실 확인) · 타과 입원은 병실PT만',
+  vre:'VRE 접촉주의 — 병실PT만 (단, RH환자만 치료실 이송 가능)',
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 치료실 이송 가능',
   mrsa:'접촉주의',
   cdiff:'CDI 접촉주의(아포)',
@@ -1511,7 +1511,7 @@ function nurseCondLines(ids){
   if(ids.includes('flu')) L.push('독감: 발열·기침이 호전되고 마스크 유지가 되면 치료실 진행');
   if(ids.some(i=>['flu','rsv','covid','other_droplet'].includes(i))) L.push('이동 중 환자 마스크 착용 · 마스크 벗는 과제(연하 등)는 독립 공간에서 진행');
   if(ids.includes('cdiff')||ids.includes('rota_noro')) L.push((ids.includes('cdiff')?'CDI':'로타·노로')+': 치료실은 물·비누 손위생과 접촉면·장비 소독으로 운영');
-  if(ids.includes('vre')) L.push('VRE: 재활 입원: 111병동재활치료실(필요 시 운동치료실 확인) · 타과: 병실PT만');
+  if(ids.includes('vre')) L.push('VRE: 병실PT만 · 단, RH환자만 치료실 이송 가능');
   L.push('다른 환자와 시간·공간 분리(가급적 마지막 시간대), 치료 후 소독은 치료실에서 진행');
   return L.slice(0,4);
 }
@@ -1521,7 +1521,7 @@ function nurseScenarioHTML(decision, ids){
   const roomOk = s==='CONDITIONAL';
   const wardOk = s!=='HOLD';
   const roomNote = roomOk
-    ? (ids.includes('vre')?'재활 입원: 111병동재활치료실(필요 시 운동치료실 확인) · 타과: 병실PT만':'가능')
+    ? (ids.includes('vre')?'단, RH환자만 치료실 이송 가능':'가능')
     : (ids.includes('cre')?'CRE — 병실 밖으로 나오지 않음':s==='WARD_ONLY'?'현재 기준 보내지 않음':'확인 전 보류');
   const wardNote = !wardOk ? '확인 전 보류'
     : s==='WARD_ONLY' ? '이 경로로 진행 · 작업·연하·언어 불가' : '필요 시 대안';
@@ -1539,8 +1539,9 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const SL = {HOLD:'보류', WARD_ONLY:'병실PT만', CONDITIONAL:'치료실 가능', CONDITIONAL_SYMPTOM:'증상 확인'};
   const reasonList = diseases.map(d=>`<li>${NURSE_REASON[d.id]||d.label}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
   const branch = symCond ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
-  /* v1.57: VRE 한 줄 · 복합 질환 판정 근거 · 보류 확인 경로 */
-  const vreTip = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 재활 입원: 111병동재활치료실(필요 시 운동치료실 확인) · 타과: 병실PT만</div>` : '';
+  /* v1.58: VRE 병실PT만 + RH 예외 한 줄 · 복합 질환 판정 근거 · 보류 확인 경로 */
+  const vreTip = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? `<div class="amber-note" style="margin-top:6px;color:#b45309;font-weight:600;">단, RH환자만 치료실 이송 가능</div>` : '';
+  const vreTitle = (decision.status==='CONDITIONAL' && ids.includes('vre')) ? '병실PT만' : null;
   let driver = '';
   if(diseases.length>1 && decision.status!=='CONDITIONAL'){
     const dd = diseases.filter(d=>baseStatusOf(d)===decision.status);
@@ -1553,7 +1554,7 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   return `
     <div class="result-banner ${v.cls}">
       <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel}</div>
-      <div class="title">${verdictTitleHTML(v.title)}</div>
+      <div class="title">${vreTitle ? vreTitle : verdictTitleHTML(v.title)}</div>
       ${branch}${vreTip}${driver}${holdLine}
     </div>
 
@@ -1643,7 +1644,7 @@ function renderResult(){
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
       <div class="part-status-list">${reasons}</div>
       ${docSym?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
-      ${diseases.some(d=>d.id==='vre')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ VRE 재활 입원: 111병동재활치료실(필요 시 운동치료실 확인) · 타과: 병실PT만</div>':''}
+      ${diseases.some(d=>d.id==='vre')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 병실PT만 · 단, RH환자만 치료실 이송 가능</div>':''}
       <p class="hint">${banner.desc}</p>
     </div>
 
