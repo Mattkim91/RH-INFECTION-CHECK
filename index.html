@@ -107,8 +107,14 @@
     gap:6px;
     margin-top:14px;
   }
-  .progress .seg{
+  .progress .seg-col{
     flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .progress .seg{
     height:4px;
     border-radius:3px;
     background:rgba(255,255,255,0.22);
@@ -122,6 +128,16 @@
   }
   .progress .seg.done .fill{width:100%;}
   .progress .seg.active .fill{width:100%;}
+  .progress .seg-cap{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.02em;
+    color:rgba(255,255,255,.55);
+    text-align:center;
+    line-height:1.2;
+  }
+  .progress .seg-col.done .seg-cap,
+  .progress .seg-col.active .seg-cap{color:#A7F3D0;}
 
   main{padding:16px 16px 8px;}
   .step-label{
@@ -583,6 +599,7 @@ header.top .version-badge{top:12px;right:14px;padding:3px 9px;border-radius:999p
 header.top .eyebrow{color:var(--mint);font-size:12.5px;}
 header.top h1{font-size:23px;letter-spacing:-.02em;}
 .progress .seg{height:5px;background:rgba(255,255,255,.16);}
+.progress .seg-cap{font-size:12px;}
 .progress .seg .fill{background:linear-gradient(90deg,#5EEAD4,#A7F3D0);}
 main{padding:18px 16px 8px;}
 .step-label{font-size:13px;color:var(--teal);text-transform:uppercase;letter-spacing:.08em;}
@@ -1040,18 +1057,20 @@ function render(){
 }
 
 function progressHTML(){
+  const caps = ['직종','질환','결과'];
   let html = '<div class="progress">';
-  for(let i=1;i<=2;i++){
-    let cls='seg';
+  for(let i=1;i<=3;i++){
+    let cls='seg-col';
     if(i<state.step) cls+=' done';
     else if(i===state.step) cls+=' active';
-    html += `<div class="${cls}"><div class="fill"></div></div>`;
+    const segCls = 'seg' + (i<state.step?' done':i===state.step?' active':'');
+    html += `<div class="${cls}"><div class="${segCls}"><div class="fill"></div></div><div class="seg-cap">${caps[i-1]}</div></div>`;
   }
   html += '</div>';
   return html;
 }
 
-const APP_VERSION = 'v1.21';
+const APP_VERSION = 'v1.22';
 
 function headerHTML(){
   return `
@@ -1075,7 +1094,7 @@ function renderWizard(){
   return `
   ${headerHTML()}
   <main>
-    <div class="step-label">STEP ${state.step} / 2</div>
+    <div class="step-label">${state.step===1?'1. 직종':'2. 질환'}</div>
     ${body}
   </main>
   <footer class="nav">
@@ -1313,7 +1332,7 @@ function conditionsCardHTML(diseases, role, decision){
 
 /* =========================================================
    v1.16 간호직 결과 — 간호사가 궁금한 순서
-   함정 → 판정 → 이동 시나리오(치료실/병실 PT) → 병실 확인·지금 할 일 → 치료 후·인계
+   판정 → 이동 시나리오(치료실/병실 PT) → 병실 확인·지금 할 일 → 치료 후·인계
    (판정 로직 decide()는 변경 없음, 표현만)
    ========================================================= */
 const NURSE_REASON = {
@@ -1336,17 +1355,6 @@ const NURSE_VERDICT = {
   HOLD:{title:'보류 — 확인 전 이송·치료 금지', cls:'banner-hold'},
 };
 
-function nurseTrapsHTML(ids){
-  const t = [];
-  if(ids.includes('tb')) t.push('<b>결핵</b> 직원 N95(동급)+Fit check, 병실 밖에서 탈의 · 환자 일반 마스크 · 폐·후두/배액 폐외결핵은 공기주의(배액 없는 폐외결핵은 표준주의)');
-  if(ids.includes('cdiff')) t.push('<b>CDI</b> 알코올 손소독제 단독 지양 → 가급적 물과 비누 · 장갑은 손위생 대체 불가 · 아포 유효 소독제');
-  if(ids.includes('cre')) t.push('<b>CRE</b> 병실치료만 · 병실 밖으로 나오지 않음 · 치료실 이송 금지(격리해제로 풀리는 보류 아님)');
-  if(ids.includes('covid')) t.push('<b>COVID-19</b> 격리 중 일반 치료실 이동 제한 · 환자·직원 일반 마스크');
-  if(ids.includes('scabies')) t.push('<b>옴</b> 격리기간 병실치료만 · 해제 시점은 감염관리팀 확인');
-  if(ids.includes('vre')||ids.includes('cre')) t.push('<b>다제내성균</b> 격리실 출입 시 장갑·일회용 가운 반드시, 나오기 전 탈의 후 손위생');
-  if(ids.includes('protective')) t.push('<b>보호격리</b> 동종·자가 조혈모세포이식, 호중구감소증(ANC 500/㎣ 이하), 급성 GVHD Grade II 이상, AIDS(HIV), 담당의가 감염위험 높다고 판단한 경우 — 출입 전 손위생·일반 마스크, 체온계·혈압계 환자 전용');
-  return `<div class="nurse-traps"><div class="nt-head">⚠ 먼저 확인 — 놓치기 쉬운 함정</div><ul>${t.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
-}
 
 function nurseTodoList(status, ids){
   const todo = ['EMR(BESTCare) 감염 Alert와 실제 격리상태·해제 여부가 일치하는지 확인','격리실 입구 격리 표지(공기·접촉·비말) 확인'];
@@ -1434,7 +1442,6 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const reason = drivers.map(d=>NURSE_REASON[d.id]||d.label).join(' / ');
   const open = !!state.expandedTreat.nurseFull;
   return `
-    ${nurseTrapsHTML(ids)}
     <div class="result-banner ${v.cls}">
       <div class="kicker">① 치료실 보내도 되나? · ${diseaseLabel} · 간호직</div>
       <div class="title">${v.title}</div>
@@ -1620,7 +1627,7 @@ function renderResult(){
   return `
   ${headerHTML()}
   <main>
-    <div class="step-label">RESULT</div>
+    <div class="step-label">3. 결과</div>
     ${bodyHTML}
     <div class="disclaimer">
       <b>본 도구는 병원 감염관리 지침을 대체하지 않으며</b>, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
