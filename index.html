@@ -725,6 +725,10 @@ const DISEASES = [
     base:'HOLD_TB',
     special:true,
     note:'공기주의. 활동성 결핵은 어떤 형태로든(치료실·병실) 재활치료를 시행하지 않음(보류). 재개는 담당의·감염관리팀 확인. 해제기준: 폐·후두 결핵 확진은 효과적 치료로 임상 호전 + 서로 다른 날 AFB 3회 음성, 의심은 다른 진단 또는 객담 AFB smear 3회 음성(8~24시간 간격, 1회 이상 이른 아침). 폐외결핵은 배액 병변 있으면 공기·접촉, 없으면 표준(활동성 폐결핵 여부 확인).'},
+  {id:'other_airborne', aliases:['기타공기주의','수두','홍역','파종성대상포진','파종성 대상포진','대상포진','전신대상포진','varicella','measles','zoster','shingles','VZV','chickenpox'], label:'기타 공기주의 (수두·홍역·파종성 대상포진)', precaution:'airborne',
+    base:'WARD_ONLY_AIRBORNE',
+    special:true,
+    note:'중앙 감염성질환자 지침 공기주의 예시(수두·홍역·파종성 대상포진). 활동성 결핵은 별도 칩(보류). 공기주의 유지 중 일반 치료실 이동 제한 → 병실물리치료만(직원 N95 동급 착용 후 병실 출입 가능), OT·SW·ST·치료실 이동 불가. 국소 대상포진은 해당 없음 → 「기타」 또는 감염관리팀 확인. 해제·예외는 담당의·감염관리팀.'},
   {id:'covid', aliases:['코로나','COVID','COVID19','SARS'], label:'COVID-19', precaution:'droplet',
     base:'WARD_ONLY_COVID',
     special:true,
@@ -747,7 +751,7 @@ const DISEASES = [
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
   {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스'], label:'기타 감염주의 필요 상태', precaution:'unclear',
     base:'HOLD',
-    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris 등 미등재 균은 기타로 선택 후 감염관리팀 확인.'},
+    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris·국소 대상포진 등 미등재·구분이 애매한 경우는 기타로 선택 후 감염관리팀 확인. 수두·홍역·파종성 대상포진은 「기타 공기주의」 칩.'},
 ];
 
 const TREATMENTS = [
@@ -828,6 +832,10 @@ function decideOne(d, part){
     case 'WARD_ONLY_COVID':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
         desc:'격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 해제 또는 이동 허용이 확인되면 치료실 조건부 치료로 전환을 검토합니다.'};
+      break;
+    case 'WARD_ONLY_AIRBORNE':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (공기주의)',
+        desc:'공기주의(수두·홍역·파종성 대상포진 등) 유지 중에는 일반 치료실 이동이 제한되어 병실물리치료만 가능합니다. 직원은 N95(동급)을 착용하면 병실 출입·치료가 가능합니다. OT·SW·ST 등 병실방문치료 미운영 파트는 시행하지 않습니다. 해제·이동 허용은 담당의·감염관리팀 확인.'};
       break;
     case 'WARD_ONLY_SCABIES':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리기간 중)',
@@ -1091,7 +1099,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.26';
+const APP_VERSION = 'v1.28';
 
 function headerHTML(){
   return `
@@ -1358,6 +1366,7 @@ function buildConditions(diseases, role, decision){
   if(ids.includes('flu')) extras.push('독감: 발열·호흡기 증상이 심하면 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실 또는 치료실 조건부 진행.');
   if(ids.includes('cdiff')) extras.push('C. difficile: 손위생은 가급적 물과 비누, 아포 유효 소독제(1:10 락스·바이오스팟·엔지셉트플러스와입스 등)로 접촉면·장비 소독.');
   if(ids.includes('covid')) extras.push('COVID-19: 환자·치료자 마스크, 다른 환자와 거리 확보(필요 시 1인 치료공간).');
+  if(ids.includes('other_airborne')) extras.push('기타 공기주의(수두·홍역·파종성 대상포진): 직원 N95(동급)·Fit check, 병실물리치료만. 국소 대상포진·결핵과 구분.');
   if(ids.includes('scabies')) extras.push('옴: 호흡재활·기침 유발 치료는 보호구 수준 상향 검토.');
   if(role==='therapy' && decision.part && ['ot','swallow','st'].includes(decision.part.id)) extras.push('독립된 치료공간·시간·동선을 분리할 수 있는지 확인한다.');
   let title='조건부 치료 조건 확인', intro='아래 조건을 모두 충족할 수 있을 때 치료실 조건부 치료를 진행하세요.', hint='';
@@ -1404,6 +1413,7 @@ const NURSE_REASON = {
   tb:'활동성/의심 결핵 — 치료실·병실 모두 재활치료 미시행(보류)',
   cre:'CRE — 내부 기준상 병실치료만(치료실 내원 원칙적 불가, 격리해제로 풀리는 보류 아님)',
   covid:'비말주의 격리 중 — 일반 치료실 이동 제한(병실치료만)',
+  other_airborne:'기타 공기주의(수두·홍역·파종성 대상포진) — 병실물리치료만, 직원 N95 착용 후 출입',
   scabies:'옴 접촉주의 격리기간 — 병실치료만',
   unknown_fever:'원인·격리 필요성 미확인 — 담당의 확인 전 보류',
   other:'질환·전파경로 미특정 — 담당의·감염관리팀 확인 전 보류',
@@ -1472,7 +1482,7 @@ function nurseScenarioHTML(decision, ids){
         <p class="detail-label">도착 전 알림</p>
         <ul class="list">
           <li>치료사 방문 전 질환·격리 종류(${decision.ppeTag})·필요 보호구 전달</li>
-          <li>병실 출입 동선·보호구 착탈 위치(격리실 입구) 안내${ids.includes('tb')?' — N95 탈의는 병실 밖에서 문 닫은 후':''}</li>
+          <li>병실 출입 동선·보호구 착탈 위치(격리실 입구) 안내${(ids.includes('tb')||ids.includes('other_airborne'))?' — N95 탈의는 병실 밖에서 문 닫은 후':''}</li>
         </ul>
         ${ppe}
         ${s==='WARD_ONLY'?'<p class="hint">※ 병실치료는 PT만 운영되며, OT·연하·ST 등 미운영 파트는 보류입니다(파트별 결과는 치료직 화면 기준).</p>':''}`:
