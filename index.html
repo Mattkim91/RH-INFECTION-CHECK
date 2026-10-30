@@ -1116,7 +1116,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.39';
+const APP_VERSION = 'v1.40';
 
 function headerHTML(){
   return `
@@ -1209,7 +1209,12 @@ function step1HTML(){
   `;
 }
 
-const PRECAUTION_GROUP_ORDER = ['contact','contact_mdro','contact_cdiff','droplet','droplet_contact','protective','unclear'];
+const PRECAUTION_GROUPS = [
+  {title:'접촉주의', keys:['contact','contact_mdro','contact_cdiff']},
+  {title:'비말주의', keys:['droplet','droplet_contact']},
+  {title:'보호격리', keys:['protective']},
+  {title:'기타', keys:['unclear']}
+];
 
 function normSearch(t){ return String(t||'').toLowerCase().replace(/[\s.·\/()\-_]/g,''); }
 function diseaseSearchKey(d){ return normSearch([d.id,d.label].concat(d.aliases||[]).join('|')).replace(/"/g,''); }
@@ -1281,9 +1286,12 @@ function step2HTML(){
   // 일반(비특별) 질환: 지정된 순서대로 그룹 렌더링. 목록에 없는 새 전파경로가
   // 추가되더라도(앞으로 질환이 늘어날 경우에 대한 안전장치) 아래에서 누락 없이 모두 표시한다.
   const coveredKeys = [];
-  const groupsHTML = PRECAUTION_GROUP_ORDER.map(key=>{
-    const list = DISEASES.filter(d=>d.precaution===key && !d.special);
-    coveredKeys.push(key);
+  const groupsHTML = PRECAUTION_GROUPS.map(g=>{
+    const list = [];
+    g.keys.forEach(key=>{
+      coveredKeys.push(key);
+      DISEASES.filter(d=>d.precaution===key && !d.special).forEach(d=>list.push(d));
+    });
     if(list.length===0) return '';
     const rows = list.map(d=>`
       <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}" role="checkbox" tabindex="0" aria-checked="${state.diseases.includes(d.id)}">
@@ -1292,7 +1300,7 @@ function step2HTML(){
       </div>
     `).join('');
     return `
-      <div class="subgroup-title">${PRECAUTION_PPE[key].tag}</div>
+      <div class="subgroup-title">${g.title}</div>
       <div class="radio-list">${rows}</div>
     `;
   }).join('') + (()=>{
