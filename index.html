@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.66';
+const APP_VERSION = 'v1.67';
 
 function headerHTML(){
   return `
@@ -1628,7 +1628,8 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
   const reasonList = diseases.map(d=>`<li>${nurseReason(d)}${diseases.length>1?` <b>[${SL[d.base]||SL[baseStatusOf(d)]||''}]</b>`:''}</li>`).join('');
   /* v1.58/v1.64: VRE 병실PT만 + RH 예외 · 배너는 ward 톤 · tip 「단,」 없음 */
   const vreTitle = null; // v1.66: 구 「병실PT만 + RH만」 배너 폐기
-  const tipColor = vreTitle ? 'margin-top:6px;color:#fff;font-weight:600;opacity:.95;' : 'margin-top:6px;color:#b45309;font-weight:600;';
+  /* v1.67: 결과 배너 안 tip은 흰 글씨(파란·주황 배너 모두 가독) */
+  const tipColor = 'margin-top:6px;color:#fff;font-weight:600;opacity:.95;';
   const branch = symCond ? `<div class="amber-note" style="${tipColor}">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>` : '';
   let vreTip = '';
   if(ids.includes('vre')){
