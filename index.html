@@ -638,6 +638,13 @@ ul.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:
 .accordion-body{font-size:15.5px;}
 .disclaimer{border:1px solid var(--line);border-left:4px solid var(--navy-2);border-style:solid;background:#fff;font-size:14.5px;}
 @media (min-width:701px){header.top{border-radius:20px 20px 0 0;}}
+
+.disease-search{display:flex;gap:8px;align-items:center;margin:4px 0 10px;}
+.disease-search input{flex:1;min-width:0;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:inherit;outline:none;-webkit-appearance:none;}
+.disease-search input::placeholder{color:#9aa4ad;}
+.disease-search input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.18);}
+.disease-search button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;cursor:pointer;}
+.disease-empty{color:#8a949c;font-size:14px;text-align:center;padding:12px 0;margin:0;}
 </style>
 </head>
 <body>
@@ -663,46 +670,47 @@ const STAFF_ROLES = [
 ];
 
 const DISEASES = [
-  {id:'mrsa', label:'MRSA · CRPA(MRPA) · MRAB', precaution:'contact',
+  {id:'mrsa', label:'MRSA / CRPA(MRPA) / MRAB', precaution:'contact',
+    aliases:['MRSA','CRPA','MRPA','MRAB','메티실린'],
     base:'CONDITIONAL',
-    note:'접촉주의. 치료실 조건부 치료 우선. MRSA·MRPA·MRAB 동일 원칙(CRPA(MRPA) = MRPA).'},
-  {id:'vre', label:'VRE', precaution:'contact_mdro',
+    note:'접촉주의. 치료실 조건부 치료 우선. 한 칩에 묶인 동일 접촉주의 원칙(MRSA·MRPA·MRAB, CRPA = MRPA).'},
+  {id:'vre', aliases:['VRE','반코마이신'], label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
     note:'접촉주의·다제내성균. 가급적 병실 우선·조건 충족 시 치료실 조건부·PT는 111병동재활치료실 우선배정.'},
-  {id:'cre', label:'CRE(CPE)', precaution:'contact_mdro',
+  {id:'cre', aliases:['CRE','CPE','카바페넴'], label:'CRE(CPE)', precaution:'contact_mdro',
     base:'WARD_ONLY_CRE',
     special:true,
     note:'접촉주의·다제내성균. 병실치료만·병실 밖으로 나오지 않음(치료실 내원 원칙적 불가)·병실치료 미운영 파트는 보류(격리해제로 풀리는 보류가 아님). 다제내성균 해제: 1주 이상 간격 연속 3회 음성 시 해제(격리 미해제 재입원 VRE·CRE는 2일 간격 3회). 치료 필요 시 PT 전환은 담당의·감염관리팀 확인.'},
-  {id:'cdiff', label:'C. difficile (CDI)', precaution:'contact_cdiff',
+  {id:'cdiff', aliases:['CDI','C.diff','클로스트리디움','디피실'], label:'C. difficile (CDI)', precaution:'contact_cdiff',
     base:'CONDITIONAL',
     note:'접촉주의·아포 형성균. 치료실 조건부 치료 우선.'},
-  {id:'tb', label:'활동성/의심 폐·후두 결핵 (배액 있는 폐외 포함)', precaution:'airborne',
+  {id:'tb', aliases:['결핵','TB','폐결핵','후두결핵','AFB'], label:'활동성/의심 폐·후두 결핵 (배액 있는 폐외 포함)', precaution:'airborne',
     base:'HOLD_TB',
     special:true,
     note:'공기주의. 활동성 결핵은 어떤 형태로든(치료실·병실) 재활치료를 시행하지 않음(보류). 재개는 담당의·감염관리팀 확인. 해제기준: 폐·후두 결핵 확진은 효과적 치료로 임상 호전 + 서로 다른 날 AFB 3회 음성, 의심은 다른 진단 또는 객담 AFB smear 3회 음성(8~24시간 간격, 1회 이상 이른 아침). 폐외결핵은 배액 병변 있으면 공기·접촉, 없으면 표준(활동성 폐결핵 여부 확인).'},
-  {id:'covid', label:'COVID-19', precaution:'droplet',
+  {id:'covid', aliases:['코로나','COVID','COVID19','SARS'], label:'COVID-19', precaution:'droplet',
     base:'WARD_ONLY_COVID',
     special:true,
     note:'비말주의. 격리 중 일반 치료실 이동 제한·병실치료만. 해제·이동 허용 후 치료실 조건부 전환·마스크 제거 치료는 담당의·감염관리팀 확인.'},
-  {id:'flu', label:'Influenza (독감 A·B형 등)', precaution:'droplet',
+  {id:'flu', aliases:['독감','influenza','flu'], label:'Influenza (독감 A·B형 등)', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
     note:'비말주의. 발열·호흡기 증상이 심하면 치료 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행.'},
-  {id:'rsv', label:'RSV 등 호흡기 감염', precaution:'contact',
+  {id:'rsv', aliases:['RSV','호흡기세포융합'], label:'RSV 등 호흡기 감염', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의. 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
-  {id:'scabies', label:'옴', precaution:'contact',
+  {id:'scabies', aliases:['옴','scabies'], label:'옴', precaution:'contact',
     base:'WARD_ONLY_SCABIES',
     special:true,
     note:'접촉주의. 격리기간 중 병실치료만. 옴 접촉주의, 격리기간 치료 시작 후 24시간까지(재활 병실치료만 해제 시점은 감염관리팀 확인).'},
-  {id:'protective', label:'보호격리', precaution:'protective',
-    base:'CONDITIONAL',
-    note:'보호격리 대상(동종·자가 조혈모세포이식, 호중구감소증(ANC 500/㎣ 이하), 급성 GVHD Grade II 이상, AIDS(HIV), 담당의가 감염위험 높다고 판단한 경우). 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 등 환자 전용. 세부 적용은 담당의·감염관리팀 확인.'},
-  {id:'unknown_fever', label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
+  {id:'protective', aliases:['보호격리','호중구','GVHD','AIDS','HIV','조혈모세포'], label:'보호격리', precaution:'protective',
+    base:'WARD_ONLY_PROTECTIVE',
+    note:'보호격리 대상(동종·자가 조혈모세포이식, 호중구감소증(ANC 500/㎣ 이하), 급성 GVHD Grade II 이상, AIDS(HIV), 담당의가 감염위험 높다고 판단한 경우). 격리 유지 중 병실 밖으로 나오지 않음 → 병실물리치료만 가능, 치료실 이동·OT·SW·ST 불가. 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 등 환자 전용. 세부·예외는 담당의·감염관리팀 확인.'},
+  {id:'unknown_fever', aliases:['발열','원인미상'], label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
-  {id:'other', label:'기타 감염주의 필요 상태', precaution:'unclear',
+  {id:'other', aliases:['기타','VRSA','C.auris','칸디다아우리스'], label:'기타 감염주의 필요 상태', precaution:'unclear',
     base:'HOLD',
-    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요.'},
+    note:'질환·전파경로가 특정되지 않아 담당의 또는 감염관리팀 확인이 우선 필요. VRSA·C.auris 등 미등재 균은 기타로 선택 후 감염관리팀 확인.'},
 ];
 
 const TREATMENTS = [
@@ -741,12 +749,13 @@ const state = {
   step:1,
   part:null,
   diseases:[],
+  diseaseQuery:'',
   expandedTreat:{},
 };
 
 function resetState(){
   state.step=1; state.part=null;
-  state.diseases=[]; state.expandedTreat={};
+  state.diseases=[]; state.diseaseQuery=''; state.expandedTreat={};
   render();
   window.scrollTo(0,0);
 }
@@ -789,6 +798,10 @@ function decideOne(d, part){
     case 'WARD_ONLY_CRE':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (CRE(CPE))',
         desc:'CRE(CPE)는 VRE와 달리 치료실 이동 없이 병실치료만 가능합니다. 병실방문치료 프로그램을 운영하지 않는 파트는 담당의·감염관리팀 확인 후 재평가합니다.'};
+      break;
+    case 'WARD_ONLY_PROTECTIVE':
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (보호격리)',
+        desc:'보호격리 유지 중에는 병실 밖으로 나오지 않으므로 병실물리치료만 가능합니다. 치료실 이동과 OT·SW·ST(병실방문치료 미운영 파트)는 시행하지 않습니다. 예외·해제 여부는 담당의·감염관리팀 확인.'};
       break;
     case 'HOLD':
     default:
@@ -1038,7 +1051,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.20';
+const APP_VERSION = 'v1.21';
 
 function headerHTML(){
   return `
@@ -1102,7 +1115,36 @@ function step1HTML(){
   `;
 }
 
-const PRECAUTION_GROUP_ORDER = ['contact','contact_mdro','contact_cdiff','droplet','droplet_contact','unclear'];
+const PRECAUTION_GROUP_ORDER = ['contact','contact_mdro','contact_cdiff','droplet','droplet_contact','protective','unclear'];
+
+function normSearch(t){ return String(t||'').toLowerCase().replace(/[\s.·\/()\-_]/g,''); }
+function diseaseSearchKey(d){ return normSearch([d.id,d.label].concat(d.aliases||[]).join('|')).replace(/"/g,''); }
+function setDisp(el,v){ if(el && el.style) el.style.display=v; }
+function isVis(el){ return !(el && el.style && el.style.display==='none'); }
+function filterDiseaseRows(){
+  const q = normSearch(state.diseaseQuery);
+  const terms = q ? q.split('|') : [];
+  Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{
+    const key = (el.dataset||{}).search||'';
+    const parts = key.split('|');
+    setDisp(el, (!q || parts.some(p=>p.includes(q))) ? '' : 'none');
+  });
+  Array.from(appEl.querySelectorAll('.radio-list')||[]).forEach(list=>{
+    if(!list.querySelector('.radio-row[data-disease]')) return;
+    const vis = Array.from(list.querySelectorAll('.radio-row[data-disease]')||[]).some(r=>isVis(r));
+    setDisp(list, vis ? '' : 'none');
+    const prev = list.previousElementSibling;
+    if(prev && prev.classList && prev.classList.contains('subgroup-title')) setDisp(prev, vis ? '' : 'none');
+  });
+  const sc = document.getElementById('specialCard');
+  let anyVis = false;
+  Array.from(appEl.querySelectorAll('.radio-row[data-disease]')||[]).forEach(el=>{ if(isVis(el)) anyVis=true; });
+  if(sc){ setDisp(sc, Array.from(sc.querySelectorAll('.radio-row[data-disease]')||[]).some(r=>isVis(r)) ? '' : 'none'); }
+  const em = document.getElementById('diseaseEmpty');
+  if(em) setDisp(em, anyVis ? 'none' : '');
+  const clr = document.getElementById('diseaseSearchBtn');
+  if(clr){ clr.textContent = state.diseaseQuery ? '✕' : '🔍'; if(clr.setAttribute) clr.setAttribute('aria-label', state.diseaseQuery ? '검색어 지우기' : '검색'); }
+}
 
 function step2HTML(){
   // 일반(비특별) 질환: 지정된 순서대로 그룹 렌더링. 목록에 없는 새 전파경로가
@@ -1113,7 +1155,7 @@ function step2HTML(){
     coveredKeys.push(key);
     if(list.length===0) return '';
     const rows = list.map(d=>`
-      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}">
+      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
         <div class="box"></div>
         <div class="txt">${d.label}</div>
       </div>
@@ -1126,7 +1168,7 @@ function step2HTML(){
     const leftover = DISEASES.filter(d=>!d.special && !coveredKeys.includes(d.precaution));
     if(leftover.length===0) return '';
     const rows = leftover.map(d=>`
-      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}">
+      <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
         <div class="box"></div>
         <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
       </div>
@@ -1136,7 +1178,7 @@ function step2HTML(){
 
   const specialList = DISEASES.filter(d=>d.special);
   const specialRows = specialList.map(d=>`
-    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}">
+    <div class="radio-row ${state.diseases.includes(d.id)?'sel':''}" data-disease="${d.id}" data-search="${diseaseSearchKey(d)}">
       <div class="box"></div>
       <div class="txt">${d.label}<small>${PRECAUTION_PPE[d.precaution].tag}</small></div>
     </div>
@@ -1145,11 +1187,16 @@ function step2HTML(){
   return `
   <div class="card">
     <h2>감염 유형</h2>
+    <div class="disease-search">
+      <input type="search" id="diseaseSearch" placeholder="예: MRSA, VRE, 결핵" autocomplete="off" aria-label="질환 검색">
+      <button type="button" id="diseaseSearchBtn" aria-label="검색">🔍</button>
+    </div>
     <p class="hint">전파경로별 주의 유형으로 묶었습니다. 환자에게 해당하는 항목을 모두 선택하세요 (중복 선택 가능).</p>
     ${groupsHTML}
+    <p class="disease-empty" id="diseaseEmpty" style="display:none">일치하는 질환이 없습니다.</p>
   </div>
 
-  <div class="card">
+  <div class="card" id="specialCard">
     <h2>특별 관리가 필요한 감염</h2>
     <p class="hint">격리 단계(유지 중 / 요건 충족 후)에 따라 치료 가능 여부가 달라지는 질환입니다.</p>
     <div class="radio-list">${specialRows}</div>
@@ -1169,6 +1216,14 @@ function bindWizardEvents(){
       render();
     };
   });
+  const ds = document.getElementById('diseaseSearch');
+  if(ds){
+    ds.value = state.diseaseQuery;
+    ds.oninput=()=>{ state.diseaseQuery = ds.value; filterDiseaseRows(); };
+    const sb = document.getElementById('diseaseSearchBtn');
+    if(sb) sb.onclick=()=>{ if(state.diseaseQuery){ state.diseaseQuery=''; ds.value=''; filterDiseaseRows(); } ds.focus(); };
+    filterDiseaseRows();
+  }
   const back = document.getElementById('btnBack');
   if(back) back.onclick=()=>{state.step--; render(); window.scrollTo(0,0);};
   const next = document.getElementById('btnNext');
@@ -1272,7 +1327,7 @@ const NURSE_REASON = {
   flu:'독감 비말주의 — 발열·호흡기 증상 심하면 보류, 호전·마스크 유지 가능 시 조건부',
   mrsa:'접촉주의 — 보호구·동선·소독 조건 충족 시 치료실 조건부',
   cdiff:'CDI 접촉주의(아포) — 물·비누 손위생·아포 소독 조건 충족 시 치료실 조건부',
-  protective:'보호격리 — 손위생·일반 마스크·환자 전용 기구 조건 충족 시 치료실 조건부',
+  protective:'보호격리 — 병실 밖 이동 불가 · 병실물리치료만 · OT·SW·ST·치료실 이동 불가',
   rsv:'RSV 접촉주의 — 보호구·동선·소독 조건 충족 시 치료실 조건부',
 };
 const NURSE_VERDICT = {
