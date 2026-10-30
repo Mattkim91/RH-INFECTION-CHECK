@@ -1114,7 +1114,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.35';
+const APP_VERSION = 'v1.36';
 
 function headerHTML(){
   return `
@@ -1347,8 +1347,7 @@ function bindWizardEvents(){
   const ds = document.getElementById('diseaseSearch');
   if(ds){
     ds.value = state.diseaseQuery;
-    ds.oninput=()=>{ state.diseaseQuery = ds.value; filterDiseaseRows();
-      const box=document.querySelector('.disease-search'); if(state.diseaseQuery && box && box.scrollIntoView){ try{ box.scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){} } };
+    ds.oninput=()=>{ state.diseaseQuery = ds.value; filterDiseaseRows(); };
     const sb = document.getElementById('diseaseSearchBtn');
     if(sb) sb.onclick=()=>{ if(state.diseaseQuery){ state.diseaseQuery=''; ds.value=''; filterDiseaseRows(); } ds.focus(); };
     filterDiseaseRows();
