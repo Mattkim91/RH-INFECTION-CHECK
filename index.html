@@ -1125,7 +1125,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.51';
+const APP_VERSION = 'v1.52';
 
 function headerHTML(){
   return `
@@ -1341,7 +1341,7 @@ function step2HTML(){
     <div class="sel-strip" id="selStrip" style="display:none"></div>
     ${groupsHTML}
     <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
-    <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없음 → 「기타」 선택 후 감염관리팀 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
+    <div class="disease-empty" id="diseaseEmpty" style="display:none">질환 목록에 없습니다.<br>기타 선택 후 필요한 부분은 감염관리팀에 문의해주세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타 선택</button></div>
   </div>
   </div>
   `;
