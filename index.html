@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.68';
+const APP_VERSION = 'v1.69';
 
 function headerHTML(){
   return `
@@ -1256,20 +1256,6 @@ function showAdmitModal(){
   });
   m.querySelector('[data-admit-cancel]').onclick=()=>m.remove();
   const f=m.querySelector('[data-admit-pick]'); if(f) f.focus();
-}
-function admitRowHTML(){
-  if(!state.diseases.includes('vre')) return '';
-  const c=(id,lab)=>`<button type="button" class="chip ${state.admit===id?'sel':''}" data-admit="${id}" aria-pressed="${state.admit===id}">${lab}</button>`;
-  return `<div class="ctx-bar-lab" style="margin:8px 0 6px;">입원 구분 <span style="font-weight:600;color:#b45309;">(VRE 필수)</span></div><div class="chip-grid">${c('rh','RH 입원')}${c('other','타과 입원')}</div>`;
-}
-function renderAdmitRow(){
-  const el = document.getElementById('admitRow');
-  if(!el) return;
-  el.innerHTML = admitRowHTML();
-  setDisp(el, state.diseases.includes('vre') ? '' : 'none');
-  Array.from(el.querySelectorAll('[data-admit]')||[]).forEach(b=>{
-    b.onclick=()=>{ state.admit=b.dataset.admit; renderAdmitRow(); const n=document.getElementById('btnNext'); if(n) n.disabled=!diseasesReady(); };
-  });
 }
 function footLineHTML(){
   return `<div class="app-badge">지침 기준: 재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) · 참고용 · 최종판단은 담당의/감염관리팀<span class="offline-badge" id="offlineBadge" style="display:${(typeof navigator!=='undefined' && navigator.onLine===false)?'inline-block':'none'}">오프라인 · 마지막 앱 ${APP_VERSION}</span></div>`;
@@ -1390,7 +1376,6 @@ function toggleDisease(id, forceOn){
   const i = state.diseases.indexOf(id);
   if(i===-1) state.diseases.push(id); else if(!forceOn) state.diseases.splice(i,1);
   if(!state.diseases.includes('vre')) state.admit=null;
-  renderAdmitRow();
   syncDiseaseRow(id);
   filterDiseaseRows();
 }
@@ -1434,7 +1419,6 @@ function step2HTML(){
   <div class="card">
     <h2>감염 유형 <span style="font-size:.72em;font-weight:600;color:#64748B;">(중복선택 가능)</span></h2>
     <div class="sel-strip" id="selStrip"><span class="sel-strip-lab">선택됨:</span> <span class="sel-strip-empty">없음</span></div>
-    <div id="admitRow" aria-label="입원 구분" style="${state.diseases.includes('vre')?'':'display:none'}">${admitRowHTML()}</div>
     ${groupsHTML}
     <div class="hint" id="diseaseHint" style="display:none;margin:6px 0;"></div>
     <div class="disease-empty" id="diseaseEmpty" style="display:none">질환 목록에 없습니다.<br>기타 선택 후 필요한 부분은 감염관리팀에 문의해주세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타 선택</button></div>
@@ -1451,7 +1435,6 @@ function bindWizardEvents(){
     el.onclick=()=>toggleDisease(el.dataset.disease);
     el.onkeydown=(e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); toggleDisease(el.dataset.disease); } };
   });
-  renderAdmitRow();
   const po = document.getElementById('btnPickOther');
   if(po) po.onclick=()=>{
     state.diseaseQuery='';
