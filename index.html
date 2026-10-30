@@ -1116,7 +1116,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.38';
+const APP_VERSION = 'v1.39';
 
 function headerHTML(){
   return `
@@ -1321,7 +1321,6 @@ function step2HTML(){
   <div class="card">
     <h2>감염 유형</h2>
     <div class="sel-strip" id="selStrip" style="display:none"></div>
-    <p class="hint">질환명을 검색하거나, 아래로 넘겨 목록에서 고르세요.</p>
     ${groupsHTML}
     <div class="disease-empty" id="diseaseEmpty" style="display:none">목록에 없으면 「기타 감염주의 필요 상태」를 선택하고 감염관리팀에 확인하세요.<br><button type="button" class="btn ghost" id="btnPickOther" style="margin-top:8px;">기타로 선택</button></div>
   </div>
