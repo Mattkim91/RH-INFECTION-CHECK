@@ -295,6 +295,24 @@
   .banner-conditional{background:linear-gradient(135deg,#1565C0,#1E88E5);}
   .banner-ward{background:linear-gradient(135deg,#B5620A,#D97F1E);}
   .banner-hold{background:linear-gradient(135deg,#8E1F1A,#B3261E);}
+  .status-pill{
+    display:inline-block;font-size:11px;font-weight:700;line-height:1.2;
+    padding:4px 8px;border-radius:999px;letter-spacing:-.2px;flex-shrink:0;
+    white-space:nowrap;
+  }
+  .pill-conditional{background:#E3F2FD;color:#0D47A1;}
+  .pill-ward{background:#FFF3E0;color:#A15C00;}
+  .pill-hold{background:#FFEBEE;color:#8E1F1A;}
+  .part-status-list{display:flex;flex-direction:column;}
+  .part-status-row{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:12px 2px;border-bottom:1px solid var(--line);
+  }
+  .part-status-row:last-child{border-bottom:none;padding-bottom:2px;}
+  .part-status-row .txt{flex:1;min-width:0;font-size:13.5px;font-weight:600;line-height:1.4;}
+  .part-status-row .txt small{display:block;font-weight:400;color:var(--sub);font-size:11.5px;margin-top:3px;}
+  .detail-label{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:-.2px;margin:0 0 8px;}
+
 
   .tb-warning{
     background:var(--danger-bg);
@@ -545,8 +563,8 @@
 <script>
 /* =========================================================
    재활감염 Quick Check — 데이터 정의
-   근거: 「재활치료실 감염환자 치료·관리 세부 운영지침(검수용 가안)」
-   ※ 본 앱은 지침을 대체하지 않으며 현장 참고용 도구입니다.
+   근거: 중앙 감염관리지침(2_03·4_08·5_02·5_03 등) + 「재활치료실 감염환자 치료·관리 세부 운영지침(검수용 가안)」
+   ※ 질환별 치료장소(CRE 병실만 등)는 내부 운영기준. 본 앱은 지침을 대체하지 않으며 현장 참고용입니다.
    ========================================================= */
 
 const PARTS = [
@@ -564,35 +582,35 @@ const STAFF_ROLES = [
 const DISEASES = [
   {id:'mrsa', label:'MRSA · CRPA(MRPA) · MRAB', precaution:'contact',
     base:'CONDITIONAL',
-    note:'접촉주의 지침 적용. 중앙 지침상 치료실 이동 제한 없음 → 치료실(운동치료실) 조건부 치료 우선. (MRSA·CRPA(MRPA)·MRAB 모두 동일 원칙 적용)'},
+    note:'접촉주의(중앙 2_03). 치료실 조건부 치료 우선은 내부 운영기준. (MRSA·MRPA·MRAB 동일 원칙; 앱 표기 CRPA(MRPA)는 중앙 용어 MRPA와 대응)'},
   {id:'vre', label:'VRE', precaution:'contact_mdro',
     base:'CONDITIONAL_ALT_WARD',
-    note:'입원·외래 구분 없이 동일 원칙 적용. 가급적 병실치료를 우선하되, 조건 충족 시 치료실 독립공간에서 조건부 치료 가능. (본 앱은 PT에 한해 재활입원환자 111병동재활치료실 우선배정 등 세부 운영기준을 적용)'},
+    note:'접촉주의·다제내성균(중앙 2_03). 가급적 병실 우선·조건 충족 시 치료실 조건부·PT 111병동재활치료실 우선배정 등은 내부 운영기준.'},
   {id:'cre', label:'CRE(CPE)', precaution:'contact_mdro',
     base:'WARD_ONLY_CRE',
     special:true,
-    note:'VRE와 달리 병실치료만 가능. 일반 치료실 이동은 원칙적으로 하지 않으며, 병실방문치료 프로그램을 운영하지 않는 파트는 치료실 내원 치료를 시행하지 않음(격리해제로 풀리는 보류가 아님). 치료 필요 시 PT 전환 가능 여부를 담당의·감염관리팀과 확인.'},
+    note:'접촉주의·다제내성균(중앙 2_03). 병실치료만·치료실 내원 원칙적 불가·미운영 파트 보류는 내부 운영기준(격리해제로 풀리는 보류가 아님). 중앙 다제내성균: 1주 이상 간격 연속 3회 음성 시 해제(격리 미해제 재입원 VRE·CRE는 2일 간격 3회). 치료 필요 시 PT 전환은 담당의·감염관리팀 확인.'},
   {id:'cdiff', label:'C. difficile (CDI)', precaution:'contact_cdiff',
     base:'CONDITIONAL',
-    note:'접촉주의 지침 적용, 치료실 이동 제한 없음 → 치료실 조건부 치료 우선. 단, 아포(spore) 형성균이므로 손위생·소독 방법이 다른 접촉주의 질환과 다름(알코올 젤 무효).'},
-  {id:'tb', label:'활동성 또는 의심 결핵', precaution:'airborne',
+    note:'접촉주의·아포 형성균(중앙 5_03: 손위생 가급적 물과 비누, 아포 유효 소독). 치료실 조건부 치료 우선은 내부 운영기준.'},
+  {id:'tb', label:'활동성/의심 폐·후두 결핵 (배액 있는 폐외 포함)', precaution:'airborne',
     base:'WARD_ONLY_TB',
     special:true,
-    note:'공기주의 격리 유지 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 항결핵제 투여 2주 이상 및 전염성 감소(증상·객담검사 결과 포함) 확인 후 병실치료 유지 또는 치료실 치료 전환을 고려. 담당의·감염관리팀 확인 필수.'},
-  {id:'covid', label:'COVID-19', precaution:'droplet_air',
+    note:'공기주의(중앙 5_02·2_03). 격리 유지 중 일반 치료실 이동 제한·병실치료만은 내부 운영기준과 일치. 항결핵제 2주·전염성 감소 후 전환은 내부 운영·담당의·감염관리팀 확인. 중앙 2_03 부록 해제기준: 폐·후두 결핵 확진은 효과적 치료로 임상 호전 + 서로 다른 날 AFB 3회 음성, 의심은 다른 진단 또는 객담 AFB smear 3회 음성(8~24시간 간격, 1회 이상 이른 아침). 폐외결핵은 배액 병변 있으면 공기·접촉, 없으면 표준(활동성 폐결핵 여부 확인).'},
+  {id:'covid', label:'COVID-19', precaution:'droplet',
     base:'WARD_ONLY_COVID',
     special:true,
-    note:'격리 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 해제 또는 이동 허용 후 치료실 조건부 치료로 전환 검토. 마스크 제거가 필요한 치료는 별도 확인.'},
+    note:'비말주의(중앙 2_03, 4급). 격리 중 일반 치료실 이동 제한·병실치료만은 내부 운영기준. 해제·이동 허용 후 치료실 조건부 전환·마스크 제거 치료는 담당의·감염관리팀 확인.'},
   {id:'flu', label:'Influenza (독감 A·B형 등)', precaution:'droplet',
     base:'CONDITIONAL_SYMPTOM',
-    note:'발열·호흡기 증상이 심하면 치료 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행.'},
-  {id:'rsv', label:'RSV 등 호흡기 감염', precaution:'droplet_contact',
+    note:'비말주의(중앙 2_03 부록: 계절 인플루엔자 격리기간 증상 발현 후 5일간, 방 밖으로 나올 때 환자 마스크). 발열·호흡기 증상이 심하면 치료 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행.'},
+  {id:'rsv', label:'RSV 등 호흡기 감염', precaution:'contact',
     base:'CONDITIONAL',
-    note:'중앙 지침상 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료는 보호구 수준을 상향 검토.'},
+    note:'접촉주의(중앙 2_03 부록: RSV — 격리기간 질병기간, 영유아·면역저하 성인 대상, 표준주의에 따라 마스크 착용, 면역저하 환자는 바이러스 배출이 길어질 수 있음). 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
   {id:'scabies', label:'옴', precaution:'contact',
     base:'WARD_ONLY_SCABIES',
     special:true,
-    note:'격리기간 중에는 일반 치료실 이동 제한 → 병실 치료만 가능. 치료·환경관리 요건 충족 확인 후 치료실 치료 재개.'},
+    note:'접촉주의(중앙 2_03 격리실 대상에 옴 포함). 격리기간 중 병실치료만은 내부 운영기준. 중앙 2_03 부록: 옴 접촉주의, 격리기간 치료 시작 후 24시간까지(재활 병실치료만 해제 시점은 감염관리팀 확인). 중앙 5_09 페이지는 추가 확보 필요.'},
   {id:'unknown_fever', label:'원인 미상 발열 · 감염 의심', precaution:'unclear',
     base:'HOLD',
     note:'원인과 격리 필요성이 확인되지 않은 상태 → 확인 전 치료 보류. 병동·담당의 확인 후 재결정.'},
@@ -607,25 +625,25 @@ const TREATMENTS = [
   {id:'gait', label:'보행훈련',
     guide:'워커·지팡이·휠체어·보행벨트·난간 등 환자·보호자·치료사가 접촉한 부위를 소독한 뒤 다른 환자에게 사용한다.'},
   {id:'exercise_equip', label:'운동기구 사용',
-    guide:'치료 전 사용 범위를 정해 접촉 장비를 최소화하고, 손잡이·조작부는 치료 후 소독한다.'},
+    guide:'치료 전 사용 범위를 정해 접촉 장비를 최소화하고, 손잡이·조작부는 치료 후 소독한다. (재활치료실 지침 4_08: 사용 후 1:100 세니자임 또는 티슈형 소독제)'},
   {id:'fes', label:'전기치료 / FES 사용',
-    guide:'FES 패드는 환자별로 개별 지정하여 다른 환자와 공유하지 않는다. 부착 전 손위생, 피부 상태 확인, 패드 오염 여부 확인, 보관 상태 확인을 시행하고, 접착력 저하나 오염 시 교체하며 치료 종료 또는 불필요 시 폐기한다. 공용으로 사용하거나 환자 간 재사용 가능성이 있는 전기자극 패드는 환자 간 소독 또는 일회용 사용을 원칙으로 한다.'},
+    guide:'FES 패드는 환자별로 개별 지정하여 다른 환자와 공유하지 않는다. 사용 전 환자 피부를 알코올솜으로 소독한 뒤 패드를 부착한다(4_08 부록1). 부착 전 손위생·피부 상태·패드 오염·보관 상태를 확인하고, 접착력 저하·오염 시 교체하며 치료 종료 또는 불필요 시 폐기한다. 공용·환자 간 재사용 가능 패드는 환자 간 소독 또는 일회용을 원칙으로 한다. 기계 본체는 정기(매일) 환경소독한다(4_08 부록1).'},
   {id:'robot_strap', label:'로봇치료 / 스트랩 사용',
     guide:'로봇 조작부는 반복접촉면으로 관리하여 치료 후 소독한다. 스트랩·고정벨트는 감염주의 환자 전용품을 사용하거나 소독·세탁이 가능한 방식으로 관리하고, 소독·세탁이 어려운 재질은 공용 사용을 제한한다.'},
   {id:'teaching_tools', label:'교구 / 태블릿 / 도서 사용',
-    guide:'플라스틱·금속 등 소독 가능한 교구는 환자 간 소독한다. 종이·도서·천 재질 등 소독이 어려운 공용 교구는 전용 교구, 일회용 자료, 코팅자료 소독 또는 공용 사용 제한 중 하나를 적용한다. 태블릿·리모컨 등 전자기기는 제조사 허용 방법과 병원 승인 소독제로 접촉면을 닦아 관리한다.'},
+    guide:'플라스틱·금속 등 소독 가능한 교구는 환자 간 소독한다(4_08: 1:100 세니자임 또는 티슈형 소독제). 종이·도서·천 재질 등 소독이 어려운 공용 교구는 전용 교구, 일회용 자료, 코팅자료 소독 또는 공용 사용 제한 중 하나를 적용한다. 태블릿·리모컨 등 전자기기는 제조사 허용 방법과 병원 승인 소독제로 접촉면을 닦아 관리한다.'},
   {id:'resp_aerosol', label:'호흡재활 또는 에어로졸 발생 가능 치료',
-    guide:'기침·객담 배출 유도, 강한 호기훈련, 호흡기구 사용 등은 비말·에어로졸 발생 가능성이 있으므로 일반 환자와 분리된 구역에서 시행하고 보호구 수준 상향을 검토한다(세부 기준은 감염관리팀 확인 필요).'},
+    guide:'기침·객담 배출 유도, 강한 호기훈련, 호흡기구 사용 등은 비말·에어로졸 발생 가능성이 있으므로 일반 환자와 분리된 구역에서 시행하고 보호구 수준 상향을 검토한다(세부 기준은 감염관리팀 확인 필요). 중앙 호흡기 치료기구 지침: Inspirometer는 환자별 새 제품, Ambu bag은 사용 후 높은 수준 소독 또는 멸균, 이동형 연무기는 매 사용 후 흐르는 물/멸균증류수로 세척·건조(마우스피스 오염 시 알코올솜), 하루 사용 종료 후 높은 수준 소독 또는 교체. 기도 흡인 전 손위생+일회용 장갑, 흡인 후 장갑 벗고 손위생.'},
 ];
 
 const PRECAUTION_PPE = {
-  contact:{tag:'접촉주의', ppe:['장갑, 필요 시 가운 착용','환자·환자 주변환경 접촉 후 손위생','사용장비 최소화, 가능한 경우 환자 전용·일회용 물품 사용']},
-  contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['장갑, 필요 시 가운 착용','현재 격리상태와 중앙 다제내성균 지침 확인','환자·환자 주변환경 접촉 후 손위생']},
-  contact_cdiff:{tag:'접촉주의(아포 형성균)', ppe:['장갑, 필요 시 가운 착용','손위생은 반드시 비누와 흐르는 물로 시행 (알코올 손소독제는 아포에 효과 없음)','접촉 표면·사용장비는 차아염소산나트륨 등 아포에 유효한 소독제로 소독']},
-  droplet:{tag:'비말주의', ppe:['환자·치료자 마스크 착용','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
-  droplet_contact:{tag:'비말·접촉주의', ppe:['마스크 착용','장갑, 필요 시 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
+  contact:{tag:'접촉주의', ppe:['직원: 장갑·긴팔 가운 착용 / 환자: 손위생 (중앙 2_03 보호구 표)','환자·환자 주변환경 접촉 후 손위생(물·비누 40~60초 / 알코올 손소독제 20~30초; 눈에 띄는 오염 시 물·비누; 장갑은 손위생 대체 불가 — 중앙 손위생 2.가)','사용장비 최소화, 가능한 경우 환자 전용·일회용 물품 사용']},
+  contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['격리실 출입 시 장갑 반드시 착용, 팔이 노출되지 않게 일회용 가운 반드시 착용 → 나오기 전 탈의·격리의료폐기물 용기에 폐기 후 손위생 (중앙 다제내성균 2.나)','현재 격리상태와 중앙 다제내성균 지침 확인','체온계·청진기·혈압계·tourniquet 등 개별물품 또는 일회용 사용(중앙 2_03)','환자·환자 주변환경 접촉 후 손위생(물·비누 40~60초 / 알코올 손소독제 20~30초; 눈에 띄는 오염 시 물·비누; 장갑은 손위생 대체 불가 — 중앙 손위생 2.가)']},
+  contact_cdiff:{tag:'접촉주의(아포 형성균)', ppe:['직원: 장갑·긴팔 가운 착용 (중앙 2_03 보호구 표)','체온계 등 개별 사용 (중앙 2_03 부록: C.difficile)','손위생은 가급적 물과 비누로 시행 (알코올 손소독제는 아포에 효과 없음; 장갑은 손위생을 대체하지 않음)(중앙 5_03)','접촉 표면·사용장비는 1:10 락스 희석액 또는 바이오스팟, 티슈형(엔지셉트플러스와입스) 등 아포에 유효한 소독제로 소독(중앙 5_03)']},
+  droplet:{tag:'비말주의', ppe:['환자·직원 모두 일반 마스크 착용 (중앙 2_03 보호구 표)','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
+  droplet_contact:{tag:'비말·접촉주의', ppe:['일반 마스크 착용','장갑·긴팔 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
   droplet_air:{tag:'비말·공기(중앙 최신지침 확인)', ppe:['중앙 최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
-  airborne:{tag:'공기주의', ppe:['중앙 지침에 따른 호흡기 보호구(N95/KF94 등)','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
+  airborne:{tag:'공기주의', ppe:['직원 N95(동급) 마스크 — 착용 시 Fit check(양손으로 감싸고 숨 불어 누설 확인), 탈의는 병실 밖으로 나와 문을 닫은 후 (중앙 2_03)','환자는 일반 마스크 착용','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
   unclear:{tag:'표준주의 + 확인 필요', ppe:['표준주의 적용, 추가 보호구는 확인 후 결정','병동·담당의 확인 전까지 추가 보호구 임의 적용 보류']},
 };
 
@@ -670,8 +688,8 @@ function decideOne(d, part){
         desc:'발열·호흡기 증상이 심한 경우에는 치료를 보류합니다. 증상이 호전되어 이동과 마스크 유지가 가능해지면, 담당의·감염관리팀 확인 후 병실물리치료 또는 치료실 치료를 조건부로 진행합니다.'};
       break;
     case 'WARD_ONLY_TB':
-      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (결핵 — 격리 중)',
-        desc:'활동성 또는 의심 결핵으로 공기주의 격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 및 전염성 감소(증상·객담검사 결과 포함)가 확인되면 병실치료 유지 또는 치료실 치료 전환 여부를 담당의·감염관리팀과 함께 재평가합니다.'};
+      result = {status:'WARD_ONLY', title:'병실 치료만 가능 (폐·후두 결핵 — 공기주의 격리 중)',
+        desc:'활동성 또는 의심 폐·후두 결핵(또는 배액 병변이 있는 폐외결핵)으로 공기주의 격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 투여 2주 이상 및 전염성 감소(증상·객담검사 결과 포함)가 확인되면 병실치료 유지 또는 치료실 치료 전환 여부를 담당의·감염관리팀과 함께 재평가합니다(중앙 해제기준: 효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성). 배액 병변이 없는 폐외결핵만 있는 경우는 표준주의 대상으로 이 제한이 그대로 적용되지 않으므로, 활동성 폐결핵 동반 여부를 담당의·감염관리팀에 확인합니다.'};
       break;
     case 'WARD_ONLY_COVID':
       result = {status:'WARD_ONLY', title:'병실 치료만 가능 (격리 중)',
@@ -793,10 +811,11 @@ function buildPrecautionSummary(diseases){
 }
 
 const NURSE_CHECKLIST = [
-  'EMR 감염 Alert',
-  '현재 격리상태',
+  'EMR(BESTCare) 감염 Alert',
+  '현재 격리상태(격리실 입구 격리 표지 포함)',
   '감염병 또는 감염균명',
   '감염병 해제 여부',
+  '보호격리 대상 여부(조혈모세포이식·ANC 500/㎣ 이하·GVHD Grade II 이상 등) — 해당 시 병실 출입 전 손위생·일반 마스크, 체온계·혈압계 등 환자 전용(중앙 보호격리)',
   '발열·호흡기 증상·피부 병변·설사 등 현재 증상',
   '치료실 이동 가능 여부',
   '병실치료 필요 여부',
@@ -836,7 +855,7 @@ function companionNote(precaution){
     case 'contact_mdro':
       return `보호자·간병인·이송요원 중 휠체어·침상 또는 환자 주변환경에 직접 접촉하는 경우 손위생 후 긴팔 가운과 장갑을 착용합니다. ${common}`;
     case 'contact_cdiff':
-      return `보호자·간병인·이송요원 중 직접 접촉하는 경우 손위생 후 긴팔 가운과 장갑을 착용합니다. 손위생은 알코올 손소독제가 아닌 비누와 흐르는 물로 시행합니다. ${common}`;
+      return `보호자·간병인·이송요원 중 직접 접촉하는 경우 손위생 후 긴팔 가운과 장갑을 착용합니다. 손위생은 가급적 물과 비누로 시행하고(알코올 손소독제 단독 사용 지양), 장갑은 손위생을 대체하지 않습니다. ${common}`;
     case 'droplet':
     case 'droplet_contact':
       return `보호자·간병인·이송요원도 이동·치료 중 마스크를 착용하고, 직접 접촉이 있는 경우 장갑·가운 착용 여부를 함께 확인합니다. ${common}`;
@@ -854,6 +873,57 @@ const STATUS_META = {
   WARD_ONLY:{cls:'banner-ward', kicker:'치료 가능성'},
   HOLD:{cls:'banner-hold', kicker:'치료 가능성'},
 };
+
+const STATUS_PILL = {
+  CONDITIONAL:{cls:'pill-conditional', label:'조건부'},
+  WARD_ONLY:{cls:'pill-ward', label:'병실만'},
+  HOLD:{cls:'pill-hold', label:'보류'},
+};
+
+/* 간호·의사 결과 배너 문구 (판정 로직·치료직 제목은 변경하지 않음 — 표현만) */
+function nurseBannerCopy(status){
+  if(status==='WARD_ONLY'){
+    return {
+      title:'병실 치료만 가능 — 치료실 이송 불가',
+      desc:'현재 기준으로는 일반 치료실 이송이 제한됩니다. 병실치료 여부를 확인하고, 이송이 필요하면 담당의·감염관리팀 확인 후 진행하세요.',
+    };
+  }
+  if(status==='HOLD'){
+    return {
+      title:'확인 전 이송·치료 보류',
+      desc:'확인 전까지 치료실 이송을 진행하지 마세요. 담당의 확인 → 필요 시 감염관리팀 문의 후 재평가합니다.',
+    };
+  }
+  return {
+    title:'치료실 이송 조건부 가능',
+    desc:'보호구·동선·소독 조건을 충족하면 치료실 이송을 진행할 수 있습니다. 출발 전 EMR Alert와 실제 격리상태를 다시 확인하세요.',
+  };
+}
+
+function doctorBannerCopy(status){
+  if(status==='WARD_ONLY'){
+    return {
+      title:'병실치료 제한이 있는 처방',
+      desc:'일부 또는 전체 파트가 병실치료만 가능합니다. 아래 파트별 가능 여부를 확인한 뒤 처방하세요.',
+    };
+  }
+  if(status==='HOLD'){
+    return {
+      title:'보류·미시행 파트가 있는 처방',
+      desc:'확인 전이거나 해당 파트에서 시행하지 않는 항목이 있습니다. 아래 파트별 상태를 확인한 뒤 처방하세요.',
+    };
+  }
+  return {
+    title:'조건부 치료실 처방 가능',
+    desc:'조건 충족 시 치료실 처방을 참고할 수 있습니다. 파트별 제목과 실제 배정 가능 여부를 확인하세요.',
+  };
+}
+
+function statusPillHTML(status){
+  const pill = STATUS_PILL[status] || STATUS_PILL.HOLD;
+  return `<span class="status-pill ${pill.cls}">${pill.label}</span>`;
+}
+
 
 /* =========================================================
    렌더링
@@ -882,7 +952,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.9';
+const APP_VERSION = 'v1.15';
 
 function headerHTML(){
   return `
@@ -1022,20 +1092,101 @@ function bindWizardEvents(){
   };
 }
 
+
+function verifyGuideHTML(decision){
+  // 결과 제목·판정 로직은 유지하고, 확인·문의 경로만 보강 (삭제한 "확인할 항목" 섹션과 별개).
+  const lines = [
+    '치료 전 <b>BESTCare 상단 감염 Alert</b>와 <b>실제 격리상태·해제 여부</b>가 일치하는지 최신 내용으로 확인하세요. 격리실 입구 환자 이름표 아래 <b>격리 표지(공기·접촉·비말)</b>도 함께 확인합니다. Alert만으로 치료·이송·처방을 결정하지 않습니다.',
+  ];
+  if(decision.role==='therapy'){
+    lines.push('불일치하거나 불명확하면 <b>병동·담당의 확인 → 필요 시 감염관리팀 문의</b> 후 치료를 시작하세요.');
+    lines.push('아래 결과(장소·보호구·장비)는 내부 참고이며, 감염관리팀 최신 지침과 담당의 판단이 우선합니다.');
+  }else if(decision.role==='doctor'){
+    lines.push('파트별 요약과 실제 배정 가능 여부가 다르면 <b>담당 치료팀 확인</b> 후 처방하세요. 판단이 어려우면 감염관리팀에 문의합니다.');
+    lines.push('본 화면은 처방 참고용이며, 감염관리팀 최신 지침과 임상 판단이 우선합니다.');
+  }else{
+    lines.push('이송 전 확인사항과 EMR·격리상태가 맞지 않으면 <b>담당의 확인 → 필요 시 감염관리팀 문의</b> 후 이송하세요.');
+    lines.push('본 화면은 이송 참고용이며, 감염관리팀 최신 지침과 담당의 판단이 우선합니다.');
+  }
+  return `
+    <div class="card">
+      <div class="section-title"><span class="ico">!</span>확인·문의</div>
+      <ul class="list">
+        ${lines.map(l=>`<li>${l}</li>`).join('')}
+      </ul>
+    </div>`;
+}
+
+function buildConditions(diseases, role, decision){
+  const ids = diseases.map(d=>d.id);
+  const core = [
+    '환자·보호자·치료사에게 필요한 보호구를 적용할 수 있다.',
+    '다른 환자와의 시간적·공간적 접촉을 최소화할 수 있다.',
+    '사용할 장비를 최소화할 수 있다.',
+    '치료 후 접촉면과 사용장비를 소독할 수 있다.',
+    '일과 중 마지막 시간으로 배정하거나, 최대한 마지막에 가깝게 배정할 수 있다.',
+    '치료 종료 후 다음 환자 전 소독시간을 확보할 수 있다.'
+  ];
+  const extras = [];
+  if(ids.some(i=>i==='mrsa'||i==='cdiff')) extras.push('접촉주의 환자는 위 공통 조건을 충족할 때 치료실 조건부 치료를 시행할 수 있다.');
+  if(ids.includes('vre')) extras.push('VRE: 이동이 어렵거나 치료실 환경관리가 부담되면 병실치료도 대안으로 고려한다. (PT 111병동재활치료실 우선배정은 내부 운영기준)');
+  if(ids.includes('flu')) extras.push('독감: 발열·호흡기 증상이 심하면 보류. 증상 호전 후 이동·마스크 유지가 가능해지면 담당의·감염관리팀 확인 후 병실 또는 치료실 조건부 진행.');
+  if(ids.includes('cdiff')) extras.push('C. difficile: 손위생은 가급적 물과 비누, 아포 유효 소독제(1:10 락스·바이오스팟·엔지셉트플러스와입스 등)로 접촉면·장비 소독 (중앙 5_03).');
+  if(ids.includes('covid')) extras.push('COVID-19: 환자·치료자 마스크, 다른 환자와 거리 확보(필요 시 1인 치료공간).');
+  if(ids.includes('scabies')) extras.push('옴: 호흡재활·기침 유발 치료는 보호구 수준 상향 검토.');
+  if(role==='therapy' && decision.part && ['ot','swallow','st'].includes(decision.part.id)) extras.push('독립된 치료공간·시간·동선을 분리할 수 있는지 확인한다.');
+  let title='조건부 치료 조건 확인', intro='아래 조건을 모두 충족할 수 있을 때 치료실 조건부 치료를 진행하세요.', hint='';
+  if(role==='nurse'){ title='조건부 이송 조건 확인'; intro='치료실 이송·치료 전 아래 조건을 충족할 수 있는지 확인하세요.'; }
+  if(role==='doctor'){
+    title='조건부 처방 시 확인 조건'; intro='조건부인 파트는 아래 조건을 충족할 때 치료실 처방을 참고하세요.';
+    const parts=(decision.perPart||[]).filter(x=>x.result.status==='CONDITIONAL').map(x=>x.part.label.split('(')[0].trim());
+    if(parts.length) hint='조건부 파트: '+parts.join(' · ');
+  }
+  return {core, extras, title, intro, hint, source:'출처: 내부 운영참고서 치료실 조건부 치료 조건 · 중앙 「재활치료실 감염관리」와 함께 적용'};
+}
+function conditionsCardHTML(diseases, role, decision){
+  const show = role==='doctor'
+    ? (decision.status==='CONDITIONAL' || (decision.perPart||[]).some(x=>x.result.status==='CONDITIONAL'))
+    : decision.status==='CONDITIONAL';
+  if(!show) return '';
+  if(state.expandedTreat.conditions===undefined) state.expandedTreat.conditions = true;
+  const c = buildConditions(diseases, role, decision);
+  const open = !!state.expandedTreat.conditions;
+  return `
+  <div class="card">
+    <div class="accordion-item ${open?'open':''}">
+      <div class="accordion-header" data-accordion="conditions">
+        <span>✓ ${c.title}</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="accordion-body">
+        <p class="hint" style="margin-top:0;">${c.intro}</p>
+        ${c.hint?`<p class="hint">${c.hint}</p>`:''}
+        <ol class="list">${c.core.map(x=>`<li>${x}</li>`).join('')}</ol>
+        ${c.extras.length?`<p class="detail-label">이 질환에서 추가로 확인할 것</p><ul class="list">${c.extras.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}
+        <p class="hint">${c.source}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderResult(){
   const decision = decide();
   const diseases = decision.diseases;
 
   const tbBanner = state.diseases.includes('tb') ? `
     <div class="tb-warning">
-      <b>⚠ 활동성/의심 결핵 — 별도 강조</b>
+      <b>⚠ 활동성/의심 결핵 — 별도 강조 (간호사·물리치료사·의사 공통)</b>
+      <b>공기주의 대상:</b> 폐·후두 결핵(확진·의심), 배액 병변이 있는 폐외결핵(공기+접촉). <b>배액 없는 폐외결핵:</b> 표준주의 — 공기주의 병실치료 제한과 다르며, 활동성 폐결핵 동반 여부를 먼저 확인합니다.<br>
+      격리 중 보호구: 직원 N95(동급) 착용 + Fit check, 병실 밖에서 탈의 / 환자 일반 마스크. 간호사는 격리 표지·BESTCare 격리 표시 확인.<br>
+      <b>해제·전환:</b> 내부 기준(항결핵제 2주 이상 + 전염성 감소) 및 중앙 해제기준(효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성 / 의심은 다른 진단 또는 AFB smear 3회 음성, 8~24시간 간격·1회 이상 이른 아침)을 함께 확인합니다.<br>
       활동성 폐결핵 또는 공기주의 격리가 유지되는 동안에는 일반 치료실 이동이 제한되어 병실치료만 가능합니다. 항결핵제 2주 이상 투여 및 전염성 감소(증상·객담검사 결과 포함)만으로 치료실 치료를 임의로 판단하지 않으며, 반드시 담당의 또는 감염관리팀 확인을 거쳐 병실치료 유지 또는 치료실 치료 전환 여부를 재평가합니다.
     </div>` : '';
 
   const cdiffBanner = state.diseases.includes('cdiff') ? `
     <div class="info-note">
       <b>ℹ C. difficile — 손위생·소독 방법 별도 강조</b>
-      C. difficile는 아포(spore)를 형성하여 알코올 손소독제만으로는 제거되지 않습니다. 반드시 비누와 흐르는 물로 손을 씻고, 접촉 표면과 사용 장비는 차아염소산나트륨 등 아포에 유효한 소독제로 소독합니다.
+      C. difficile는 아포(spore)를 형성하여 알코올 손소독제만으로는 제거되지 않습니다. 손위생은 가급적 물과 비누로 하고(장갑은 손위생 대체 불가), 접촉 표면·사용 장비는 1:10 락스 희석액 또는 바이오스팟, 티슈형(엔지셉트플러스와입스) 등 아포에 유효한 소독제로 소독합니다(중앙 5_03).
     </div>` : '';
 
   const diseaseLabel = diseases.map(d=>d.label).join(' + ');
@@ -1044,20 +1195,28 @@ function renderResult(){
 
   if(decision.role==='doctor'){
     const meta = STATUS_META[decision.status];
+    const banner = doctorBannerCopy(decision.status);
     const partRows = decision.perPart.map(({part,result})=>{
       return `
-      <div class="radio-row" style="cursor:default;">
+      <div class="part-status-row">
+        ${statusPillHTML(result.status)}
         <div class="txt">
-          <b>${part.label}</b><small>${result.title}</small>
+          <b>${part.label}</b>
+          <small>${result.title}</small>
         </div>
       </div>`;
     }).join('');
+    const summaryBits = decision.perPart.map(({part,result})=>{
+      const pill = STATUS_PILL[result.status] || STATUS_PILL.HOLD;
+      const short = part.label.split('(')[0].trim();
+      return `${short} ${pill.label}`;
+    }).join(' · ');
 
     bodyHTML = `
     <div class="result-banner ${meta.cls}">
       <div class="kicker">처방 참고 · ${diseaseLabel} · 의사직</div>
-      <div class="title">파트별 처방 가능한 치료실</div>
-      <div class="desc">아래는 파트별 참고용 요약입니다. 최종 처방 가능 여부는 담당 치료팀 확인을 거칩니다.</div>
+      <div class="title">${banner.title}</div>
+      <div class="desc">${banner.desc}</div>
       <div class="tag-row">
         <span class="tag">${decision.ppeTag}</span>
       </div>
@@ -1065,10 +1224,12 @@ function renderResult(){
 
     ${tbBanner}
     ${cdiffBanner}
+    ${conditionsCardHTML(diseases, decision.role==='doctor'?'doctor':decision.role==='nurse'?'nurse':'therapy', decision)}
 
     <div class="card">
-      <div class="section-title"><span class="ico">1</span>파트별 치료실 배정 현황</div>
-      <div class="radio-list">${partRows}</div>
+      <div class="section-title"><span class="ico">1</span>파트별 가능 여부</div>
+      <p class="hint" style="margin-top:0;">한눈에 보기: ${summaryBits}</p>
+      <div class="part-status-list">${partRows}</div>
     </div>
 
     <div class="card">
@@ -1077,14 +1238,18 @@ function renderResult(){
         ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
       </ul>
     </div>
+
+    ${verifyGuideHTML(decision)}
     `;
   }else if(decision.role==='nurse'){
     const meta = STATUS_META[decision.status];
+    const banner = nurseBannerCopy(decision.status);
+    const nursePill = STATUS_PILL[decision.status] || STATUS_PILL.HOLD;
     bodyHTML = `
     <div class="result-banner ${meta.cls}">
-      <div class="kicker">이송 참고 · ${diseaseLabel} · 간호직</div>
-      <div class="title">이송 전 확인사항</div>
-      <div class="desc">치료실 이송 전 아래 항목을 확인하고, 필요한 보호구와 동반자 안내를 함께 준비하세요.</div>
+      <div class="kicker">이송 참고 · ${diseaseLabel} · 간호직 · ${nursePill.label}</div>
+      <div class="title">${banner.title}</div>
+      <div class="desc">${banner.desc}</div>
       <div class="tag-row">
         <span class="tag">${decision.ppeTag}</span>
       </div>
@@ -1092,25 +1257,29 @@ function renderResult(){
 
     ${tbBanner}
     ${cdiffBanner}
+    ${conditionsCardHTML(diseases, decision.role==='doctor'?'doctor':decision.role==='nurse'?'nurse':'therapy', decision)}
 
     <div class="card">
-      <div class="section-title"><span class="ico">1</span>이송 전 확인사항</div>
-      <ul class="list">
-        ${decision.checklist.map(c=>`<li>${c}</li>`).join('')}
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="section-title"><span class="ico">2</span>보호구</div>
+      <div class="section-title"><span class="ico">1</span>보호구</div>
       <ul class="list">
         ${decision.ppeItems.map(p=>`<li>${p}</li>`).join('')}
       </ul>
     </div>
 
     <div class="card">
-      <div class="section-title"><span class="ico">3</span>보호자·간병인·이송요원</div>
+      <div class="section-title"><span class="ico">2</span>보호자·간병인·이송요원</div>
       <ul class="list">
         ${decision.companionNotes.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+    </div>
+
+    ${verifyGuideHTML(decision)}
+
+    <div class="card">
+      <div class="section-title"><span class="ico">3</span>상세 · 이송 전 확인사항</div>
+      <p class="detail-label">지침서 공식 점검 항목 (질환과 무관하게 동일)</p>
+      <ul class="list">
+        ${decision.checklist.map(c=>`<li>${c}</li>`).join('')}
       </ul>
     </div>
     `;
@@ -1140,6 +1309,9 @@ function renderResult(){
 
     ${tbBanner}
     ${cdiffBanner}
+    ${conditionsCardHTML(diseases, decision.role==='doctor'?'doctor':decision.role==='nurse'?'nurse':'therapy', decision)}
+
+    ${verifyGuideHTML(decision)}
 
     <div class="card">
       <div class="section-title"><span class="ico">1</span>치료 장소</div>
