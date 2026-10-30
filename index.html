@@ -1176,7 +1176,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.70';
+const APP_VERSION = 'v1.71';
 
 function headerHTML(){
   return `
@@ -1867,7 +1867,7 @@ function renderResult(){
 function histPush(step){ try{ history.pushState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
 function histReplace(step){ try{ history.replaceState({qcStep:step}, '', location.pathname + location.search + '#'+step); }catch(e){} }
 function resetDiseaseSel(){ state.diseases=[]; state.admit=null; state.diseaseQuery=''; state.expandedTreat={}; }
-function leaveTo(n){ if(n===1 && state.step>=2) resetDiseaseSel(); }
+function leaveTo(n){ if(n===1 && state.step>=2) resetDiseaseSel(); else if(n===2 && state.step===3) state.admit=null; }
 function goStep(n){ if(n===3 && state.diseases.includes('vre') && !state.admit){ showAdmitModal(); return; } const _am=document.getElementById('admitModal'); if(_am) _am.remove(); leaveTo(n); state.step=n; histPush(n); render(); window.scrollTo(0,0); }
 // 화면 '이전' = 시스템 뒤로가기와 동일 → popstate가 화면을 갱신 (스택 일치)
 function goBack(){
