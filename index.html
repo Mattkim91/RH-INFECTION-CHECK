@@ -1204,7 +1204,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.76';
+const APP_VERSION = 'v1.77';
 
 function headerHTML(){
   return `
@@ -1287,7 +1287,8 @@ function showAdmitModal(){
   const f=m.querySelector('[data-admit-pick]'); if(f) f.focus();
 }
 function footLineHTML(){
-  return `<div class="app-badge">지침 기준: 재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) · 참고용 · 최종판단은 담당의/감염관리팀<span class="offline-badge" id="offlineBadge" style="display:${(typeof navigator!=='undefined' && navigator.onLine===false)?'inline-block':'none'}">오프라인 · 마지막 앱 ${APP_VERSION}</span></div>`;
+  /* v1.77: 지침 메타(기준·버전·관리·점검) 하단 한 줄 */
+  return `<div class="app-badge">기준: 원내 감염관리 지침(최신본 확인) · 재활치료실 감염환자 치료·관리 세부 운영지침(2026.09.10 수정) · 앱 ${APP_VERSION} · 관리: 활명수팀(확인: 감염관리팀) · 점검: 분기 1회 · 참고용 · 최종판단은 담당의/감염관리팀<span class="offline-badge" id="offlineBadge" style="display:${(typeof navigator!=='undefined' && navigator.onLine===false)?'inline-block':'none'}">오프라인 · 마지막 앱 ${APP_VERSION}</span></div>`;
 }
 function updateOfflineBadge(){
   const b = document.getElementById('offlineBadge');
@@ -1703,6 +1704,43 @@ function nurseResultHTML(decision, diseases, diseaseLabel, tbBanner, cdiffBanner
     </div>`;
 }
 
+
+/* v1.77: 치료직 3줄 요약 · 보호자 문장 접기 · 약어 풀이 */
+function isCompanionLine(l){ return typeof l==='string' && l.indexOf('보호자·간병인·이송요원')>-1; }
+function companionFoldHTML(lines){
+  const c = (lines||[]).filter(isCompanionLine);
+  if(!c.length) return '';
+  return `<details class="companion-fold" style="margin-top:6px;"><summary>보호자·간병인·이송요원 안내 (펼치기)</summary><ul class="list">${c.map(l=>`<li>${l}</li>`).join('')}</ul></details>`;
+}
+function therapySummaryHTML(decision){
+  const s = decision.status;
+  const verdict = s==='CONDITIONAL'?'치료 가능(조건 확인)':s==='WARD_ONLY'?'병실PT만':(state.admit==='other'&&state.diseases.includes('vre')?'미시행':'보류');
+  const place = s==='CONDITIONAL'?'치료실':s==='WARD_ONLY'?'환자 병실(침상)':'치료하지 않음 — 담당의 확인';
+  const ppe = s==='HOLD'?'치료 보류(재개 시 확인)':(decision.ppeTag||'표준주의');
+  return `<div class="card summary3" style="padding:10px 12px;">
+    <div class="section-title" style="margin-bottom:4px;">요약</div>
+    <div><b>판정</b> · ${verdict}</div>
+    <div><b>장소</b> · ${place}</div>
+    <div><b>보호구</b> · ${ppe}</div>
+    <p class="hint" style="margin:4px 0 0;">상세는 아래</p>
+  </div>`;
+}
+const ABBR = {
+  mrsa:['MRSA','메티실린 내성 황색포도알균'],
+  vre:['VRE','반코마이신 내성 장알균'],
+  cre:['CRE(CPE)','카바페넴 내성(분해효소 생성) 장내세균'],
+  cdiff:['CDI','C. difficile 감염'],
+  tb:['AFB','항산성균 도말검사(결핵)'],
+  rsv:['RSV','호흡기세포융합바이러스']
+};
+function glossaryHTML(){
+  const ids = state.diseases||[];
+  const rows = ids.filter(id=>ABBR[id]).map(id=>ABBR[id]);
+  if(ids.includes('vre')) rows.push(['RH','재활의학과 입원 (타과 = 그 외 진료과 입원)']);
+  rows.push(['PT·OT·ST','물리·작업·언어치료'],['PPE','개인보호구']);
+  return `<details class="glossary card" style="padding:8px 12px;"><summary>용어 풀이</summary><ul class="list">${rows.map(r=>`<li><b>${r[0]}</b> — ${r[1]}</li>`).join('')}</ul></details>`;
+}
+
 function renderResult(){
   const decision = decide();
   const diseases = decision.diseases;
@@ -1851,6 +1889,8 @@ function renderResult(){
       ${decision.status==='HOLD' ? holdInfoHTML() : ''}
     </div>
 
+    ${therapySummaryHTML(decision)}
+
     ${tbBanner}
     ${cdiffBanner}
     ${conditionsCardHTML(diseases, decision.role==='doctor'?'doctor':decision.role==='nurse'?'nurse':'therapy', decision)}
@@ -1860,8 +1900,9 @@ function renderResult(){
     <div class="card">
       <div class="section-title"><span class="ico">1</span>치료 장소</div>
       <ul class="list">
-        ${decision.location.map(l=>`<li>${l}</li>`).join('')}
+        ${decision.location.filter(l=>!isCompanionLine(l)).map(l=>`<li>${l}</li>`).join('')}
       </ul>
+      ${companionFoldHTML(decision.location)}
     </div>
 
     <div class="card">
@@ -1896,8 +1937,9 @@ function renderResult(){
   <main>
     <div class="step-label step-label-row">3. 결과${selectedPartLabel()?`<span class="ctx-pill" aria-label="선택 직종">${selectedPartLabel()}</span>`:''}${(state.diseases.includes('vre')&&state.admit)?`<span class="ctx-pill" aria-label="입원 구분">${state.admit==='rh'?'RH 입원':'타과 입원'}</span>`:''}</div>
     ${bodyHTML}
+    ${glossaryHTML()}
     <div class="disclaimer">
-      본 도구는 병원 감염관리 지침을 대체하지 않으며, 재활치료 현장에서 지침 확인을 돕기 위한 내부 참고용 도구입니다. 감염관리팀의 최신 지침과 담당의 판단을 우선합니다. 판단이 어려운 경우 담당의 또는 감염관리팀에 확인하세요.
+      본 도구는 병원 감염관리 지침을 대체하지 않는 내부 참고용 도구입니다. 최신 지침과 담당의 판단이 우선하며, 판단이 어려우면 담당의·감염관리팀에 확인하세요.
     </div>
   </main>
   <div class="nav-hint">이전 = 질환은 유지 · VRE 입원 구분은 다시 선택</div>
