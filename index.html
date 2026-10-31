@@ -935,7 +935,7 @@ function decideOne(d, part){
       if(pid==='pt') loc.push('환자 병실(침상)로 직접 방문해 병실PT로 진행합니다. 치료실 이송은 하지 않습니다.');
       else loc.push('타과 입원 VRE는 이 파트에서 미시행입니다(확인 전 원칙 · 격리해제 대기 보류 아님).');
     }else{
-      loc.push('입원 구분(RH/타과) 확인 전까지 치료를 시작하지 않습니다.');
+      loc.push('입원 구분(RH/타과)을 먼저 확인합니다.');
     }
   }else if(result.status==='WARD_ONLY'){
     if(hasWard){
@@ -959,7 +959,7 @@ function decideOne(d, part){
     }
   }else if(result.status==='CONDITIONAL'){
     if(hasWard){
-      loc.push('운동치료실에서 다른 환자와의 시간적·공간적 접촉을 최소화하여 치료를 진행합니다. 이동이 어렵거나 치료실 환경관리가 충분하지 않은 경우에는 병실PT도 대안으로 고려할 수 있습니다.');
+      loc.push('운동치료실에서 다른 환자와 시간·공간을 분리해 치료합니다(어려우면 병실PT 대안).');
     }else{
       loc.push(`${part.label}는 병실방문치료 프로그램을 운영하지 않으므로, 치료실 내원이 허용된 경우 독립된 치료공간에서 시행합니다.`);
       if(part.id==='ot') loc.push('작업치료실 내 독립된 치료공간을 우선 활용하고 다른 환자와 치료시간·동선을 분리합니다.');
@@ -967,14 +967,15 @@ function decideOne(d, part){
       if(part.id==='st') loc.push('1:1 독립 치료실에서 환자 간 치료시간과 이동 동선이 겹치지 않도록 조정합니다.');
     }
   }else if(result.status==='HOLD'){
-    loc.push('확인 전까지 치료를 시작하지 않습니다. 병동 또는 담당의 확인 → 필요 시 감염관리팀 문의 순서로 진행합니다.');
+    loc.push('병동 또는 담당의 확인 → 필요 시 감염관리팀 문의 순서로 진행합니다.');
   }
 
   if(result.status==='CONDITIONAL' || result.status==='WARD_ONLY'){
-    loc.push('환자 이동은 필요한 범위로 최소화하고, 이동 전 도착 장소와 치료 가능 여부를 확인합니다. 환자의 오염 가능 부위를 덮거나 관리해 공용환경과의 접촉을 최소화하고, 이동에 사용한 휠체어·침상·워커·손잡이 등 접촉면은 사용 후 소독합니다.');
+    loc.push('환자 이동은 최소화하고, 이동에 쓴 휠체어·침상·워커 등 접촉면은 사용 후 소독합니다.');
   }
 
-  loc.push(companionNote(d.precaution));
+  /* v1.74: 보류·미시행이면 보호자 보호구 문장 생략(치료하지 않음) */
+  if(result.status!=='HOLD') loc.push(companionNote(d.precaution));
   result.location = loc;
   result.disease = d;
 
@@ -1003,8 +1004,11 @@ function decideForPart(diseases, part){
   const locSet = [];
   const COMMON = '이동 전 오염된 보호구는 제거하고 손위생을 시행하며, 치료 장소에서 직접 접촉이 필요한 경우 청결한 보호구를 새로 착용합니다.';
   let hasCommon = false;
+  /* v1.74: 전체가 보류·미시행이면 다른 질환의 보호자 보호구·이동 문장도 제외 */
+  const skipLine = line=> worst.status==='HOLD' && (line.indexOf('보호자·간병인·이송요원')>-1 || line.indexOf('환자 이동은')===0 || line.includes(COMMON));
   perDisease.forEach(r=>{
     r.location.forEach(line=>{
+      if(skipLine(line)) return;
       /* v1.73: 공통 보호구 문장은 한 번만 */
       if(line.includes(COMMON)){ hasCommon = true; line = line.replace(COMMON,'').trim(); if(!line) return; }
       /* v1.73: 타과 VRE + 다른 보류 질환 → 「보류 아님」 표현 제거 */
@@ -1193,7 +1197,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.73';
+const APP_VERSION = 'v1.74';
 
 function headerHTML(){
   return `
@@ -1698,8 +1702,8 @@ function renderResult(){
   const tbOpen = !!state.expandedTreat.tbCriteria;
   const tbBanner = state.diseases.includes('tb') ? `
     <div class="tb-warning">
-      <b>⚠ 활동성/의심 결핵 — 재활치료 미시행(보류)</b>
-      치료실·병실 모두 시행하지 않으며, 재개는 <b>담당의·감염관리팀 확인</b> 후 재평가합니다.
+      <b>⚠ 활동성/의심 결핵 — 재활치료 보류</b>
+      치료실·병실 모두 보류 · 재개는 <b>담당의·감염관리팀 확인</b> 후 재평가.
     </div>
     <div class="card">
       <div class="accordion-item ${tbOpen?'open':''}">
@@ -1707,7 +1711,8 @@ function renderResult(){
         <div class="accordion-body">
           <b>공기주의 대상:</b> 폐·후두 결핵(확진·의심), 배액 병변이 있는 폐외결핵(공기+접촉). <b>배액 없는 폐외결핵:</b> 표준주의 — 공기주의 병실치료 제한과 다르며, 활동성 폐결핵 동반 여부를 먼저 확인합니다.<br>
           ${decision.role==='nurse'?'격리 표지·BESTCare 격리 표시 확인.':'격리 중 보호구: 직원 N95(동급) 착용 + Fit check, 병실 밖에서 탈의 / 환자 일반 마스크. 간호사는 격리 표지·BESTCare 격리 표시 확인. 이 보호구는 다른 사유로 병실에 들어가는 직원용입니다.'}<br>
-          <b>해제·전환:</b> 내부 기준(항결핵제 2주 이상 + 전염성 감소) 및 해제기준(효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성 / 의심은 다른 진단 또는 AFB smear 3회 음성, 8~24시간 간격·1회 이상 이른 아침)을 함께 확인합니다. 항결핵제 2주 이상·전염성 감소만으로 임의 재개하지 않습니다.
+          <b>해제·재개:</b> 항결핵제 2주 이상 + 전염성 감소 <b>및</b> AFB 3회 음성 확인 후 담당의·감염관리팀이 결정(임의 재개 금지).
+          <details style="margin-top:4px;"><summary>AFB 해제기준 상세</summary>확진: 효과적 치료로 임상 호전 + 서로 다른 날 객담 AFB 3회 음성. 의심: 다른 진단 또는 AFB smear 3회 음성(8~24시간 간격·1회 이상 이른 아침).</details>
         </div>
       </div>
     </div>` : '';
@@ -1780,7 +1785,7 @@ function renderResult(){
 
     <div class="card">
       <div class="section-title"><span class="ico">1</span>결과 설명</div>
-      <div class="part-status-list">${reasons}</div>
+      <!-- v1.74: 파트별 상태는 상단 그리드 한 곳에서만 -->
       ${(docSym && decision.status==='CONDITIONAL')?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ 발열·기침 심하면 보류 — 증상 호전·마스크 유지 가능한지 확인</div>':''}
       ${showVreTip?'<div style="margin-top:6px;color:#b45309;font-weight:600;">⚠ RH 입원 · 치료실 가능(PT 111 우선 · 운동치료실 문의·컨펌)</div>':''}
       <p class="hint">${banner.desc}</p>
@@ -1827,7 +1832,7 @@ function renderResult(){
     <div class="result-banner ${meta.cls}">
       <div class="title">${verdictTitleHTML(decision.title)}</div>
       <div class="desc dz-line" style="opacity:.95;font-weight:600;">${diseaseLabel}</div>
-      ${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '<div class="desc">어떤 형태로든(치료실·병실) 재활치료 미시행 — 재개는 담당의·감염관리팀 확인.</div>' : ''}
+      ${(state.diseases.includes('tb') && decision.title && decision.title.indexOf('결핵')>-1) ? '<div class="desc">어떤 형태로든(치료실·병실) 재활치료 보류 — 재개는 담당의·감염관리팀 확인.</div>' : ''}
     </div>
 
     ${tbBanner}
