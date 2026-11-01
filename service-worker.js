@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rehab-infection-check-v1.77';
+const CACHE_NAME = 'rehab-infection-check-v1.78';
 const ASSETS = [
   './',
   './index.html',
@@ -59,3 +59,4 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
