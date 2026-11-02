@@ -771,9 +771,9 @@ const DISEASES = [
     base:'WARD_ONLY_DROPLET',
     special:true,
     note:'중앙 감염성질환자 지침 비말주의 예시(2급: 백일해·성홍열·유행성이하선염·수막구균성 수막염·풍진 등). 독감·COVID-19는 별도 칩. 격리 유지 중 일반 치료실 이동 제한 → 병실물리치료만, 작업·연하·언어·치료실 이동 불가. 직원·환자는 일반 마스크(비말). 해제·예외는 담당의·감염관리팀 확인.'},
-  {id:'rsv', short:'RSV', aliases:['RSV','호흡기세포융합'], label:'RSV (호흡기세포융합바이러스)', precaution:'contact',
+  {id:'rsv', short:'RSV', aliases:['RSV','호흡기세포융합'], label:'RSV (호흡기세포융합바이러스)', precaution:'droplet_contact',
     base:'CONDITIONAL',
-    note:'접촉주의. 직원은 장갑·긴팔 가운 + 표준주의에 따른 일반 마스크(기침·분비물 노출 예상 시), 환자는 기침 시 마스크. 이동 제한 없음 → 치료실 조건부 치료 우선. 호흡재활·기침 유발 치료 시 마스크·안면보호 착용 확인.'},
+    note:'접촉·비말주의(팀 표기 통일: 중앙 2_03 표 격리유형 접촉 + 마스크 요소). 직원은 장갑·긴팔 가운 + 일반 마스크 착용, 환자는 이동·치료 중 마스크 착용, 기침 시 1m 이상 거리·기침예절. 이동 제한 없음 → 치료실 조건부 치료 우선. 에어로졸 발생 가능 치료(호흡재활·기침 유발·흡인 등) 시 일반 마스크 + 고글·안면보호구 추가, 치료 후 장비·표면 소독.'},
   {id:'rota_noro', short:'로타노로', aliases:['로타','로타바이러스','rotavirus','노로','노로바이러스','norovirus','로타·노로'], label:'로타·노로바이러스', precaution:'contact',
     base:'CONDITIONAL',
     note:'접촉주의(중앙지침 심평원 격리실 대상 \'로타·노로바이러스 등\'). 직원 장갑·긴팔 가운, 손위생은 가급적 물과 비누(노로는 알코올 손소독제 효과가 낮을 수 있음). 설사·구토 지속 시 담당의·감염관리팀 확인, 증상 조절되면 치료실 조건부 치료.'},
@@ -814,8 +814,8 @@ const PRECAUTION_PPE = {
   contact_mdro:{tag:'접촉주의(다제내성균)', ppe:['격리실 출입 시 장갑 반드시 착용, 팔이 노출되지 않게 일회용 가운 반드시 착용 → 나오기 전 탈의·격리의료폐기물 용기에 폐기 후 손위생','현재 격리상태와 다제내성균 지침 확인','체온계·청진기·혈압계·tourniquet 등 개별물품 또는 일회용 사용','환자·환자 주변환경 접촉 후 손위생(물·비누 40~60초 / 알코올 손소독제 20~30초; 눈에 띄는 오염 시 물·비누; 장갑은 손위생 대체 불가)']},
   contact_cdiff:{tag:'접촉주의(아포 형성균)', ppe:['직원: 장갑·긴팔 가운 착용','체온계 등 개별 사용','손위생은 가급적 물과 비누로 시행 (알코올 손소독제는 아포에 효과 없음; 장갑은 손위생을 대체하지 않음)','접촉 표면·사용장비는 1:10 락스 희석액 또는 바이오스팟, 티슈형(엔지셉트플러스와입스) 등 아포에 유효한 소독제로 소독']},
   droplet:{tag:'비말주의', ppe:['환자·직원 모두 일반 마스크 착용','다른 환자와 거리 확보, 필요 시 1인 치료공간 고려','기침·객담, 마스크 유지 가능 여부 확인']},
-  // droplet_contact·droplet_air: 현재 질환에 미사용이나 그룹순서·companionNote에서 참조 → 안전장치로 유지
-  droplet_contact:{tag:'비말·접촉주의', ppe:['일반 마스크 착용','장갑·긴팔 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
+  // droplet_contact: RSV(v1.79). droplet_air: 현재 질환에 미사용이나 그룹순서·companionNote에서 참조 → 안전장치로 유지
+  droplet_contact:{tag:'접촉·비말주의', ppe:['일반 마스크 착용','장갑·긴팔 가운 착용','고접촉 표면·사용장비 치료 후 소독']},
   droplet_air:{tag:'비말·공기', ppe:['최신 격리·해제기준에 따른 마스크/호흡기 보호구','마스크 제거가 필요한 과제(호흡·연하재활)는 가능 여부 별도 확인']},
   airborne:{tag:'공기주의', ppe:['직원 N95(동급) 마스크 — 착용 시 Fit check(양손으로 감싸고 숨 불어 누설 확인), 탈의는 병실 밖으로 나와 문을 닫은 후','환자는 일반 마스크 착용','공기주의 유지 중 일반 치료실 이동 제한','적절한 음압·환기 환경 확보 여부 확인']},
   protective:{tag:'보호격리', ppe:['병실 출입 전 손위생','직원 일반 마스크 착용','체온계·혈압계 등 환자 전용']},
@@ -1206,7 +1206,7 @@ function progressHTML(){
   return html;
 }
 
-const APP_VERSION = 'v1.78';
+const APP_VERSION = 'v1.79';
 
 function headerHTML(){
   return `
@@ -1329,7 +1329,7 @@ function step1HTML(){
 
 const PRECAUTION_GROUPS = [
   {title:'접촉주의', keys:['contact','contact_mdro','contact_cdiff']},
-  {title:'비말주의', keys:['droplet','droplet_contact']},
+  {title:'비말주의 (접촉·비말 포함)', keys:['droplet','droplet_contact']},
   {title:'공기주의', keys:['airborne']},
   {title:'보호격리', keys:['protective']},
   {title:'기타', keys:['unclear']}
@@ -1595,7 +1595,7 @@ const NURSE_REASON = {
   cdiff:'CDI 접촉주의(아포)',
   protective:'보호격리 — 병실 밖 이동 불가 · 병실PT만(작업·연하·언어 불가)',
   rota_noro:'로타·노로 접촉주의',
-  rsv:'RSV 접촉주의',
+  rsv:'RSV 접촉·비말주의',
 };
 /* v1.50: 핵심 판정어 크게(verdict-main) + 보조설명 작게(verdict-sub) */
 function verdictTitleHTML(t){
@@ -2208,3 +2208,5 @@ if('serviceWorker' in navigator){
 </body>
 </html>
 
+
+<!-- v1.79: RSV precaution contact -> droplet_contact (접촉·비말주의); decision CONDITIONAL unchanged. -->
