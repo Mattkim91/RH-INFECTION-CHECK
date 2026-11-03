@@ -72,4 +72,4 @@ icons/                홈 화면·설치용 아이콘 (16px~512px)
 - iPhone 노치/하단 홈 인디케이터 영역은 safe-area 여백으로 자동 회피됩니다
 
 ## 4) 업데이트 방법
-로직/문구를 수정하면 `index.html`의 `service-worker.js`에 정의된 `CACHE_NAME` 버전 문자열(`rehab-infection-check-v2.0`)을 올려주세요. 그래야 이미 설치된 기기에서도 오프라인 캐시가 새 내용으로 교체됩니다.
+로직/문구를 수정하면 `service-worker.js`에 정의된 `CACHE_NAME` 버전 문자열(`rehab-infection-check-2.1`)을 올려주세요. 그래야 이미 설치된 기기에서도 오프라인 캐시가 새 내용으로 교체됩니다.
